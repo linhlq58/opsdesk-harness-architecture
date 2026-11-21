@@ -1,0 +1,90 @@
+[project]
+name = "opsdesk"
+version = "0.0.0"
+description = "Internal IT Helpdesk assistant built as a production-grade agent harness."
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "pydantic>=2.14.4,<3.0.0",
+    "pydantic-settings>=2.16.3,<3.0.0",
+    "pyyaml>=6.0.4,<7.0.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "import-linter>=2.17,<3.0",
+    "poethepoet>=0.49.0,<0.50.0",
+    "pre-commit>=4.7.0,<5.0.0",
+    "pyright>=1.1.414,<2.0.0",
+    "pytest>=9.2.0,<10.0.0",
+    "pytest-asyncio>=1.5.0,<2.0.0",
+    "ruff>=0.17.6,<0.18.0",
+]
+
+# ---------------------------------------------------------------- poe tasks
+# Cross-platform task runner: `uv run poe <task>` behaves the same on
+# Windows, Linux and CI. No Makefile, no shell scripts.
+[tool.poe.tasks]
+fmt       = { cmd = "ruff format .", help = "Format code" }
+fmt-check = { cmd = "ruff format --check .", help = "Check formatting" }
+lint      = { cmd = "ruff check .", help = "Lint" }
+typecheck = { cmd = "pyright", help = "Type-check (strict for src/)" }
+arch      = { cmd = "lint-imports", help = "Check architecture contracts" }
+test      = { cmd = "pytest", help = "Run tests" }
+check     = { sequence = ["fmt-check", "lint", "typecheck", "arch", "test"], help = "Everything CI runs" }
+
+# --------------------------------------------------------------------- ruff
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.format]
+# Ruff also formats Python blocks inside Markdown. Code in docs/ is
+# illustrative (hand-aligned comments), so leave it alone.
+exclude = ["docs/**"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade
+    "SIM",      # simplify
+    "C4",       # comprehensions
+    "RUF",      # ruff-specific
+    "DTZ",      # naive datetimes (time must be tz-aware UTC)
+    "T20",      # no print()
+    "PTH",      # prefer pathlib
+    "PLW1514",  # open()/read_text() without encoding=
+    "ASYNC",    # async pitfalls
+]
+preview = true          # needed for PLW1514
+explicit-preview-rules = true
+
+[tool.ruff.lint.isort]
+known-first-party = ["opsdesk"]
+
+# ------------------------------------------------------------------- pyright
+[tool.pyright]
+pythonVersion = "3.13"
+include = ["src", "tests"]
+strict = ["src"]
+typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
+
+# -------------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "integration: end-to-end tests with fake models",
+]

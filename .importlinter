@@ -1,0 +1,50 @@
+[importlinter]
+root_package = opsdesk
+include_external_packages = True
+
+[importlinter:contract:layers]
+name = Harness layers
+type = layers
+layers =
+    opsdesk.api | opsdesk.evaluation
+    opsdesk.orchestration | opsdesk.workloads
+    opsdesk.agents
+    opsdesk.tools | opsdesk.retrieval
+    opsdesk.security : opsdesk.observability : opsdesk.cost : opsdesk.resilience : opsdesk.llm : opsdesk.persistence
+    opsdesk.domain
+    opsdesk.core
+
+[importlinter:contract:pure-domain]
+name = Pure domain
+type = forbidden
+source_modules =
+    opsdesk.domain
+forbidden_modules =
+    langchain
+    langgraph
+    fastapi
+    mcp
+    a2a
+    sqlite3
+
+[importlinter:contract:rag-isolation]
+name = Two RAG pipelines
+type = forbidden
+source_modules =
+    opsdesk.api
+    opsdesk.orchestration
+    opsdesk.agents
+    opsdesk.retrieval
+forbidden_modules =
+    opsdesk.ingestion
+
+[importlinter:contract:ingestion-boundaries]
+name = Ingestion uses only what it is allowed to
+type = forbidden
+source_modules =
+    opsdesk.ingestion
+forbidden_modules =
+    opsdesk.api
+    opsdesk.orchestration
+    opsdesk.agents
+    opsdesk.tools

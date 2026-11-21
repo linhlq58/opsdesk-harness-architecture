@@ -1,0 +1,9 @@
+# LF everywhere, on Windows and CI alike.
+* text=auto eol=lf
+
+# Binary files: never touch line endings.
+*.png binary
+*.jpg binary
+*.pdf binary
+*.sqlite binary
+*.db binary

@@ -1,0 +1,25 @@
+# Local hooks run the tool versions pinned in uv.lock, so pre-commit, CI and
+# `uv run poe check` can never disagree about which ruff / import-linter is used.
+#
+# Install once:  uv run pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --frozen ruff format
+        language: system
+        types: [python]
+
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --frozen ruff check --fix
+        language: system
+        types: [python]
+
+      - id: import-linter
+        name: import-linter (architecture contracts)
+        entry: uv run --frozen lint-imports
+        language: system
+        pass_filenames: false
+        types: [python]
