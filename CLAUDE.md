@@ -19,10 +19,11 @@ If a task is not marked, ask before writing code.
 ## Commands
 
 ```bash
-make install     # uv sync
-make check       # fmt-check + lint + typecheck + arch + test (must pass before every commit)
-make test        # pytest
-make arch        # lint-imports
+uv sync                 # install / update the environment
+uv run poe check        # fmt-check + lint + typecheck + arch + test (must pass before every commit)
+uv run poe test         # pytest
+uv run poe arch         # lint-imports
+uv run poe fmt          # format code
 ```
 
 ## Architecture rules (enforced by import-linter, do NOT relax)
@@ -46,12 +47,24 @@ make arch        # lint-imports
 - No `print`; use `logging`. Never log secrets, full prompts or PII.
 - Do not add a dependency before a milestone needs it. When you add one, state why in the commit message.
 
+## Cross-platform rules (Windows dev machine + Linux and Windows CI)
+
+The project is developed on native Windows (VS Code + Claude Code) and CI runs on both `ubuntu-latest` and `windows-latest`. Code must behave identically on both.
+
+- Paths: always `pathlib.Path`. Never build paths with string concatenation or hardcoded `/` or `\\`.
+- Text files: always pass `encoding="utf-8"` to `open()`, `read_text()` and `write_text()` (the Windows default is not UTF-8).
+- Line endings: LF everywhere (enforced by `.gitattributes`).
+- Automation: tasks live in `pyproject.toml` (`[tool.poe.tasks]`) and helper scripts are Python. No bash/PowerShell scripts, no Makefile.
+- No symlinks (they need special privileges on Windows). Use pointer files written with `os.replace` for atomic switches.
+- Processes: start servers/subprocesses with `sys.executable` and argument lists, never shell strings.
+- Ports and hosts come from settings; bind to `127.0.0.1` by default.
+
 ## Testing
 
 - Every behaviour change needs a test. Tests never call a real model; use the fake models in `opsdesk.llm`.
 - Tests live in `tests/unit`, `tests/contract` and `tests/integration`.
-- Judge-based (paid) evaluations are not part of `make check`.
+- Judge-based (paid) evaluations are not part of `poe check`.
 
 ## Commits
 
-Format: `type(mNN): description` (e.g. `feat(m03): add ticket tool wrapper`). Every commit must pass `make check`.
+Format: `type(mNN): description` (e.g. `feat(m03): add ticket tool wrapper`). Every commit must pass `uv run poe check`.

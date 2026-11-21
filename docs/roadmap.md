@@ -12,7 +12,7 @@ Estimate: 22 milestones, roughly 30–40 sessions.
 
 | # | Milestone | 🎯 You write | ⚙️ Claude Code | Course topics |
 |---|---|---|---|---|
-| M00 | Repository skeleton | Read and adapt `.importlinter` (layer rules) | uv, ruff, pyright, pytest, pre-commit, GitHub Actions CI, Makefile, Settings | Layered architecture |
+| M00 | Repository skeleton | Read and adapt `.importlinter` (layer rules) | uv, ruff, pyright, pytest, pre-commit, GitHub Actions CI (Linux + Windows), poe tasks, VS Code settings, Settings | Layered architecture |
 | M01 | Domain & seed data | `domain/models.py`, `domain/policies/` (ownership, access, approval) + unit tests | YAML seed data, SQLite repositories | W1 L2 (verification), W4 L3 (plain Python) |
 | M02 | Core contracts | `Principal`, `RequestContext`, `ToolResult` + error taxonomy, `Event` v1 + bus + JSONL sink | Contract tests for the schemas | W1 L2, L4 |
 

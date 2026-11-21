@@ -120,11 +120,11 @@ Additional contracts:
 
 ```
 opsdesk/
-├── pyproject.toml              # uv, ruff, pyright, pytest, import-linter
+├── pyproject.toml              # uv, ruff, pyright, pytest, import-linter, poe tasks (dev | test | check | eval | ingest | mcp | a2a)
 ├── CLAUDE.md                   # rules for Claude Code
 ├── .importlinter
 ├── .env.example
-├── Makefile                    # make dev | test | lint | eval | ingest | mcp | a2a
+├── .vscode/                    # shared settings.json + extensions.json
 ├── docs/
 │   ├── architecture.md
 │   ├── adr/                    # 0001-layered-hexagonal.md, ...
@@ -258,7 +258,7 @@ class IndexManifest(BaseModel):
     embedding_model: str | None
 ```
 
-Ingestion writes to a staging directory → validates → atomically switches the `current` alias. Serving reads only `current`, checks `schema_version`, and fails closed if the index is broken.
+Ingestion writes a new version directory → validates → atomically switches the `CURRENT` pointer file (written to a temp file, then `os.replace`; no symlinks, so it works on Windows). Serving resolves `CURRENT`, checks `schema_version`, and fails closed if the index is missing or broken.
 
 ### 6.5 Policy config (W3 L1, L3)
 
@@ -343,13 +343,13 @@ The **Router / Subagent / Handoff / Skill** tabs in the UI remain as separate de
 
 ## 9. Technology & versions
 
-**Policy:** always use **the latest versions that install together**. Declare them in `pyproject.toml` as `>=current,<next major`; `uv.lock` pins exact versions. To upgrade: `uv lock --upgrade` → commit if `make check` passes.
+**Policy:** always use **the latest versions that install together**. Declare them in `pyproject.toml` as `>=current,<next major`; `uv.lock` pins exact versions. To upgrade: `uv lock --upgrade` → commit if `uv run poe check` passes on both CI platforms.
 
 **Verified on 2026-11-21:** the full list below was installed together on Python 3.13 → `pip check` reported no conflicts, and every module imported successfully.
 
 | Group | Package | Version | Notes |
 |---|---|---|---|
-| Runtime | Python | **3.13** | |
+| Runtime | Python | **3.13** | Development on native Windows; CI on `ubuntu-latest` and `windows-latest` |
 | | uv | latest | Environment/dependency management |
 | Agent | langchain | 1.5.2 | Built-in middleware: ToolRetry, ModelRetry, ModelCallLimit, ToolCallLimit, HumanInTheLoop, PII, ModelFallback, LLMToolSelector… |
 | | langchain-core | 1.8.4 | Includes fake chat models for testing |
@@ -379,6 +379,7 @@ The **Router / Subagent / Handoff / Skill** tabs in the UI remain as separate de
 | | pyright | 1.1.414 | |
 | | import-linter | 2.17 | |
 | | pre-commit | latest | |
+| | poethepoet | 0.49.0 | Cross-platform task runner (`uv run poe <task>`) |
 
 Each milestone adds only the packages it actually uses (M00 needs only the Foundation and Dev groups). The versions above are a reference point; when adding a package, use the latest version at that time and update this table.
 
