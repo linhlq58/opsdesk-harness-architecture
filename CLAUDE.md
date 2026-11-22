@@ -50,7 +50,7 @@ uv run poe fmt          # format code
 - Time: timezone-aware UTC `datetime`, obtained through `core.clock`. Never use `datetime.utcnow()`.
 - Identity comes only from the server-built `RequestContext`/`Principal`. Never from user text, model output or retrieved data.
 - Tools return a `ToolResult` whose status belongs to the shared error taxonomy. No ad-hoc dicts, and no raw exceptions leaking to the model.
-- Thresholds, budgets, scopes and retry settings are read from `config/policy.yaml`. Never hardcode them.
+- Tunables (approval thresholds, budgets, retry/timeout settings) are read from `config/policy.yaml` (introduced in M14). Never hardcode them. The role → scope mapping is **not** a tunable: it is part of the security model and lives in code (`security/scopes.py`), changed only through review and tests.
 - No `print`; use `logging`. Never log secrets, full prompts or PII.
 - Do not add a dependency before a milestone needs it. When you add one, state why in the commit message.
 

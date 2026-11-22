@@ -130,7 +130,7 @@ opsdesk/
 │   ├── adr/                    # 0001-layered-hexagonal.md, ...
 │   └── milestones/             # M00.md, M01.md, ...
 ├── config/
-│   ├── policy.yaml             # scopes, approval thresholds, gates, budgets, retry/timeout
+│   ├── policy.yaml             # tunables: approval thresholds, gates, budgets, retry/timeout
 │   └── pricing.yaml            # model prices per 1M tokens, with effective dates
 ├── data/
 │   ├── seed/                   # tenants, employees, tickets, software catalogue
@@ -192,7 +192,8 @@ class RequestContext(BaseModel, frozen=True):     # security/context.py
     workload: Workload              # chat | eval | report
 ```
 
-- `principal_for(employee)` is the only place scopes and groups are derived. Scopes are coarse (tool-level); domain policies (M01) stay fine-grained (entity-level). A tool call needs both.
+- `principal_for(employee)` is the only place scopes and groups are derived. Scopes are coarse (tool-level); domain policies (M01) stay fine-grained (entity-level). A tool call needs both. The role → scope table is code (`security/scopes.py`), not configuration.
+- `observability` depends only on `core`: the event recorder takes `request_id`/`thread_id`, never a `RequestContext`. `Workload` lives in `core` because security, observability, cost and evaluation all use it.
 
 - Built by the API from a signed token. Passed into graphs through LangGraph's `context_schema` / runtime context, **never** placed in messages sent to the model.
 - Tools receive `RequestContext` through the runtime, not through arguments filled in by the model.
