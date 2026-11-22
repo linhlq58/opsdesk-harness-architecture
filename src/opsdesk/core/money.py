@@ -5,12 +5,23 @@ a currency, so adding two amounts in different currencies is an error instead of
 silently wrong number (this matters from M07, when provider prices arrive in USD).
 
 Only VND exists for now. VND has no minor unit, so amounts are whole numbers.
+
+Pydantic: ``Money`` owns its schema (``__get_pydantic_core_schema__``), so any model field
+typed ``Money`` behaves the same everywhere. There is exactly one wire format:
+
+* serialise → ``{"amount": "5000000", "currency": "VND"}`` (amount as a string, so JSON
+  never turns it into a float; currency included, because M07 adds USD prices);
+* parse ← that dict, a bare ``int`` / ``str`` / ``Decimal`` amount (VND, e.g. seed YAML
+  ``annual_cost: 5000000``), or a ``Money``.
 """
 
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from functools import total_ordering
-from typing import Literal, Self
+from typing import Any, Literal, Self
+
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
 
 type Currency = Literal["VND"]
 _SUPPORTED_CURRENCIES: frozenset[str] = frozenset({"VND"})
@@ -64,6 +75,53 @@ class Money:
     def _require_same_currency(self, other: "Money") -> None:
         if self.currency != other.currency:
             raise ValueError(f"currency mismatch: {self.currency} vs {other.currency}")
+
+    # -------------------------------------------------------------------- pydantic
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_plain_validator_function(
+            _parse_money,
+            # Describes the accepted input for JSON schema (tool schemas, snapshots).
+            json_schema_input_schema=_MONEY_JSON_SCHEMA,
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                _dump_money, return_schema=_MONEY_JSON_SCHEMA
+            ),
+        )
+
+
+_MONEY_JSON_SCHEMA = core_schema.typed_dict_schema(
+    {
+        "amount": core_schema.typed_dict_field(core_schema.str_schema()),
+        "currency": core_schema.typed_dict_field(core_schema.literal_schema(["VND"])),
+    }
+)
+
+
+def _parse_money(value: object) -> Money:
+    """Pydantic validator: accept a ``Money``, a bare VND amount or the dict form.
+
+    Pydantic only turns ``ValueError`` into a ``ValidationError``. ``Money`` raises
+    ``TypeError`` for floats and other bad types, so those are re-raised as
+    ``ValueError``; otherwise a bad seed file would crash with a raw traceback instead
+    of a validation report.
+    """
+    if isinstance(value, Money):
+        return value
+    try:
+        if isinstance(value, dict):
+            data: dict[str, Any] = value  # pyright: ignore[reportUnknownVariableType]
+            return Money(data["amount"], data.get("currency", "VND"))
+        return Money(value)  # pyright: ignore[reportArgumentType]  (checked at runtime)
+    except (TypeError, KeyError) as exc:
+        raise ValueError(str(exc)) from exc
+
+
+def _dump_money(value: Money) -> dict[str, str]:
+    # Amount as a string: exact in JSON (no float) and readable in SQLite / YAML.
+    return {"amount": str(value.amount), "currency": value.currency}
 
 
 def _to_decimal(amount: object) -> Decimal:

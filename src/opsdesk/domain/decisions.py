@@ -19,6 +19,9 @@ from typing import Self
 class ReasonCode(StrEnum):
     OK = "ok"
 
+    # coarse authorization (security.authz.require_scope, M02)
+    MISSING_SCOPE = "missing_scope"
+
     # visibility / approval (who is asking)
     CROSS_TENANT = "cross_tenant"
     NOT_OWNER = "not_owner"

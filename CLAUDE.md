@@ -23,6 +23,14 @@ General Python work is **never** 🎯, even if a milestone file says so: value o
 
 If a task is not marked, apply the rule above; ask only if it is genuinely unclear.
 
+## Milestone workflow (from M03 on)
+
+1. **Version check first**: before coding, compare installed vs latest versions and read the changelog of every package the milestone touches; note API differences from the course material in the milestone's Notes.
+2. **Eval cases are part of done (from M07 on)**: add at least one deterministic case to `evals/datasets/` per milestone and keep the eval gate green.
+3. **Temporary adapters, permanent contracts**: a stub tool may stand in for a later capability (e.g. static FAQ before RAG), but it goes through the tool registry, `ToolResult` and events like the real one.
+
+See `docs/roadmap.md` for the full plan.
+
 ## Commands
 
 ```bash
@@ -50,7 +58,7 @@ uv run poe fmt          # format code
 - Time: timezone-aware UTC `datetime`, obtained through `core.clock`. Never use `datetime.utcnow()`.
 - Identity comes only from the server-built `RequestContext`/`Principal`. Never from user text, model output or retrieved data.
 - Tools return a `ToolResult` whose status belongs to the shared error taxonomy. No ad-hoc dicts, and no raw exceptions leaking to the model.
-- Tunables (approval thresholds, budgets, retry/timeout settings) are read from `config/policy.yaml` (introduced in M14). Never hardcode them. The role → scope mapping is **not** a tunable: it is part of the security model and lives in code (`security/scopes.py`), changed only through review and tests.
+- Tunables (approval thresholds, budgets, retry/timeout settings) are read from `config/policy.yaml` (introduced in M14a). Never hardcode them. The role → scope mapping is **not** a tunable: it is part of the security model and lives in code (`security/scopes.py`), changed only through review and tests.
 - No `print`; use `logging`. Never log secrets, full prompts or PII.
 - Do not add a dependency before a milestone needs it. When you add one, state why in the commit message.
 

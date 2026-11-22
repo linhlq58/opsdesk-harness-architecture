@@ -1,0 +1,21 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "duration_ms": {
+      "minimum": 0,
+      "title": "Duration Ms",
+      "type": "integer"
+    },
+    "node": {
+      "minLength": 1,
+      "title": "Node",
+      "type": "string"
+    }
+  },
+  "required": [
+    "node",
+    "duration_ms"
+  ],
+  "title": "NodeFinished",
+  "type": "object"
+}

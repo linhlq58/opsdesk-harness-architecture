@@ -37,6 +37,7 @@ typecheck = { cmd = "pyright", help = "Type-check (strict for src/)" }
 arch      = { cmd = "lint-imports", help = "Check architecture contracts" }
 test      = { cmd = "pytest", help = "Run tests" }
 seed      = { cmd = "python -m opsdesk.persistence.seed", help = "Rebuild var/opsdesk.db from data/seed (idempotent)" }
+snapshots = { cmd = "pytest tests/contract/test_schemas.py -q", env = { OPSDESK_UPDATE_SNAPSHOTS = "1" }, help = "Regenerate contract JSON-schema snapshots (review the diff!)" }
 check     = { sequence = ["fmt-check", "lint", "typecheck", "arch", "test"], help = "Everything CI runs" }
 
 # --------------------------------------------------------------------- ruff

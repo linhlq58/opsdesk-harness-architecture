@@ -1,0 +1,70 @@
+{
+  "$defs": {
+    "JsonValue": {},
+    "ToolStatus": {
+      "enum": [
+        "ok",
+        "empty",
+        "not_found",
+        "invalid",
+        "denied",
+        "unavailable",
+        "timeout"
+      ],
+      "title": "ToolStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "data": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Data"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "safe_message": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Safe Message"
+    },
+    "status": {
+      "$ref": "#/$defs/ToolStatus"
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "title": "ToolResult[dict[str, JsonValue]]",
+  "type": "object"
+}

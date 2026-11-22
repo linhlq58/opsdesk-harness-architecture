@@ -59,6 +59,13 @@ class TicketRepository(Protocol):
 
 
 class SoftwareRepository(Protocol):
+    """The software catalogue: the one repository without ``tenant_id``.
+
+    Global by design: one catalogue is shared by all tenants and contains no tenant
+    data. Who holds a licence lives on ``Employee``, which is tenant-scoped
+    (architecture.md §6.4).
+    """
+
     async def get(self, software_id: SoftwareId) -> SoftwareItem | None: ...
 
     async def list_all(self) -> list[SoftwareItem]:

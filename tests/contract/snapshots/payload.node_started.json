@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "node": {
+      "minLength": 1,
+      "title": "Node",
+      "type": "string"
+    }
+  },
+  "required": [
+    "node"
+  ],
+  "title": "NodeStarted",
+  "type": "object"
+}

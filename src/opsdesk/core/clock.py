@@ -9,7 +9,18 @@ Domain policies go one step further: they do not even take a ``Clock``, they tak
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from typing import Protocol
+from typing import Annotated, Protocol
+
+from pydantic import AfterValidator, AwareDatetime
+
+
+def _to_utc(value: datetime) -> datetime:
+    return value.astimezone(UTC)
+
+
+# Pydantic field type for every timestamp at a boundary (domain entities, events).
+# AwareDatetime rejects naive datetimes; AfterValidator normalises every offset to UTC.
+type UtcDatetime = Annotated[AwareDatetime, AfterValidator(_to_utc)]
 
 
 class Clock(Protocol):

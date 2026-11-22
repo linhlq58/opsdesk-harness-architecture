@@ -8,21 +8,17 @@ Invariants checked here hold for *any* instance. Rules that depend on who is act
 on configuration (visibility, transitions, approval) live in ``domain.policies``.
 """
 
-from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Annotated, Any, Self
 
 from pydantic import (
-    AfterValidator,
-    AwareDatetime,
     BaseModel,
     ConfigDict,
     Field,
-    PlainSerializer,
-    PlainValidator,
     model_validator,
 )
 
+from opsdesk.core.clock import UtcDatetime
 from opsdesk.core.money import Money
 from opsdesk.domain.ids import (
     AccessRequestId,
@@ -34,39 +30,6 @@ from opsdesk.domain.ids import (
 
 # ------------------------------------------------------------------------ field types
 
-
-def _to_utc(value: datetime) -> datetime:
-    return value.astimezone(UTC)
-
-
-# AwareDatetime rejects naive datetimes; AfterValidator normalises every offset to UTC.
-type UtcDatetime = Annotated[AwareDatetime, AfterValidator(_to_utc)]
-
-
-def _parse_money(value: Any) -> Money:
-    """Accept a ``Money``, a bare amount (VND), or ``{"amount": ..., "currency": ...}``.
-
-    Pydantic only turns ``ValueError`` into a ``ValidationError``. ``Money`` raises
-    ``TypeError`` for floats, so it is re-raised as ``ValueError`` here; otherwise a bad
-    seed file would crash with a raw traceback instead of a validation report.
-    """
-    if isinstance(value, Money):
-        return value
-    try:
-        if isinstance(value, dict):
-            data: dict[str, Any] = value  # pyright: ignore[reportUnknownVariableType]
-            return Money(data["amount"], data.get("currency", "VND"))
-        return Money(value)
-    except (TypeError, KeyError) as exc:
-        raise ValueError(str(exc)) from exc
-
-
-def _dump_money(value: Money) -> dict[str, str]:
-    # Amount as a string: exact in JSON (no float) and readable in SQLite / YAML.
-    return {"amount": str(value.amount), "currency": value.currency}
-
-
-type MoneyField = Annotated[Money, PlainValidator(_parse_money), PlainSerializer(_dump_money)]
 
 type NonEmptyStr = Annotated[str, Field(min_length=1)]
 
@@ -202,7 +165,7 @@ class Ticket(DomainModel):
 class SoftwareItem(DomainModel):
     id: SoftwareId
     name: NonEmptyStr
-    annual_cost: MoneyField
+    annual_cost: Money
     restricted_to: frozenset[Department] = frozenset()  # empty = everyone
     requires_admin: bool = False
 

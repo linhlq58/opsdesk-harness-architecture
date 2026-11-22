@@ -1,0 +1,89 @@
+{
+  "$defs": {
+    "EventKind": {
+      "enum": [
+        "run_started",
+        "node_started",
+        "node_finished",
+        "route_decided",
+        "token",
+        "tool_started",
+        "tool_finished",
+        "retrieval_done",
+        "guard_verdict",
+        "gate_fired",
+        "approval_required",
+        "approval_resolved",
+        "handoff",
+        "usage_recorded",
+        "budget_blocked",
+        "run_finished"
+      ],
+      "title": "EventKind",
+      "type": "string"
+    },
+    "JsonValue": {},
+    "UtcDatetime": {
+      "format": "date-time",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/EventKind"
+    },
+    "namespace": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Namespace",
+      "type": "array"
+    },
+    "payload": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Payload",
+      "type": "object"
+    },
+    "request_id": {
+      "title": "Request Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "opsdesk.event.v1",
+      "default": "opsdesk.event.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seq": {
+      "minimum": 0,
+      "title": "Seq",
+      "type": "integer"
+    },
+    "thread_id": {
+      "title": "Thread Id",
+      "type": "string"
+    },
+    "ts": {
+      "$ref": "#/$defs/UtcDatetime"
+    }
+  },
+  "required": [
+    "seq",
+    "event_id",
+    "ts",
+    "request_id",
+    "thread_id",
+    "kind",
+    "payload"
+  ],
+  "title": "Event",
+  "type": "object"
+}

@@ -1,0 +1,30 @@
+{
+  "$defs": {
+    "Workload": {
+      "enum": [
+        "chat",
+        "eval",
+        "report"
+      ],
+      "title": "Workload",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "entrypoint": {
+      "minLength": 1,
+      "title": "Entrypoint",
+      "type": "string"
+    },
+    "workload": {
+      "$ref": "#/$defs/Workload"
+    }
+  },
+  "required": [
+    "workload",
+    "entrypoint"
+  ],
+  "title": "RunStarted",
+  "type": "object"
+}

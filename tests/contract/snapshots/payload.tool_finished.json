@@ -1,0 +1,64 @@
+{
+  "$defs": {
+    "ToolStatus": {
+      "enum": [
+        "ok",
+        "empty",
+        "not_found",
+        "invalid",
+        "denied",
+        "unavailable",
+        "timeout"
+      ],
+      "title": "ToolStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "duration_ms": {
+      "minimum": 0,
+      "title": "Duration Ms",
+      "type": "integer"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "status": {
+      "$ref": "#/$defs/ToolStatus"
+    },
+    "summary": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Summary"
+    },
+    "tool": {
+      "minLength": 1,
+      "title": "Tool",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tool",
+    "status",
+    "duration_ms"
+  ],
+  "title": "ToolFinished",
+  "type": "object"
+}

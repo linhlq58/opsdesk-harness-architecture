@@ -1,8 +1,10 @@
 import dataclasses
+import json
 from decimal import Decimal
 from typing import Any
 
 import pytest
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from opsdesk.core.money import Money
 
@@ -154,3 +156,56 @@ def test_equal_money_hashes_equal() -> None:
 def test_ordering_with_non_money_is_a_type_error(other: Any) -> None:
     with pytest.raises(TypeError):
         _ = Money(1) < other
+
+
+# -------------------------------------------------------------------------- pydantic
+# Money owns its pydantic schema, so a plain ``Money`` annotation is enough in any
+# model. One wire format: {"amount": "<whole VND>", "currency": "VND"}.
+
+
+class _Priced(BaseModel):
+    price: Money
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        5_000_000,
+        "5000000",
+        Decimal(5_000_000),
+        Money(5_000_000),
+        {"amount": "5000000", "currency": "VND"},
+        {"amount": 5_000_000},  # currency defaults to VND
+    ],
+)
+def test_pydantic_accepts_every_input_shape(raw: Any) -> None:
+    assert _Priced.model_validate({"price": raw}).price == Money(5_000_000)
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [1.5, 1000.0, True, None, "abc", -1, {"currency": "VND"}, {"amount": "1", "currency": "USD"}],
+)
+def test_pydantic_turns_every_bad_input_into_a_validation_error(raw: Any) -> None:
+    # Never a raw TypeError / KeyError: seed loading reports these as validation problems.
+    with pytest.raises(ValidationError):
+        _Priced.model_validate({"price": raw})
+
+
+def test_pydantic_dumps_the_single_dict_format() -> None:
+    m = _Priced(price=Money(5_000_000))
+    expected = {"amount": "5000000", "currency": "VND"}
+    assert m.model_dump() == {"price": expected}
+    assert json.loads(m.model_dump_json()) == {"price": expected}
+
+
+def test_pydantic_json_round_trip() -> None:
+    m = _Priced(price=Money(1_200_000))
+    assert _Priced.model_validate_json(m.model_dump_json()) == m
+
+
+def test_pydantic_json_schema_describes_the_dict_format() -> None:
+    schema = TypeAdapter(Money).json_schema(mode="serialization")
+    assert schema["type"] == "object"
+    assert set(schema["properties"]) == {"amount", "currency"}
+    assert schema["properties"]["amount"]["type"] == "string"

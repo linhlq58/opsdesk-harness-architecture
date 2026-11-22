@@ -1,0 +1,30 @@
+{
+  "$defs": {
+    "RunStatus": {
+      "enum": [
+        "completed",
+        "blocked",
+        "interrupted",
+        "failed"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "duration_ms": {
+      "minimum": 0,
+      "title": "Duration Ms",
+      "type": "integer"
+    },
+    "status": {
+      "$ref": "#/$defs/RunStatus"
+    }
+  },
+  "required": [
+    "status",
+    "duration_ms"
+  ],
+  "title": "RunFinished",
+  "type": "object"
+}

@@ -1,0 +1,20 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "agent": {
+      "minLength": 1,
+      "title": "Agent",
+      "type": "string"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "text",
+    "agent"
+  ],
+  "title": "Token",
+  "type": "object"
+}
