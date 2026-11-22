@@ -177,19 +177,22 @@ opsdesk/
 ### 6.1 Principal & RequestContext (W1 L2, W2 L2, W3 L1)
 
 ```python
-class Principal(BaseModel, frozen=True):
-    tenant_id: str
-    user_id: str
-    department: str
-    groups: frozenset[str]          # employee, it_staff, hr, finance, it_manager
-    scopes: frozenset[str]          # ticket:read:own, access:request, access:approve, ...
+class Principal(BaseModel, frozen=True):          # security/principal.py
+    tenant_id: TenantId
+    user_id: EmployeeId
+    department: Department
+    roles: frozenset[Role]
+    scopes: frozenset[Scope]        # coarse: may this user call this kind of tool at all?
+    groups: frozenset[str]          # RAG ACL groups: role names + "dept:<department>"
 
-class RequestContext(BaseModel, frozen=True):
+class RequestContext(BaseModel, frozen=True):     # security/context.py
     principal: Principal
-    request_id: str                 # correlation id for events / traces / audit / ledger
-    thread_id: str
-    workload: Literal["chat", "eval", "report"]
+    request_id: RequestId           # correlation id for events / traces / audit / ledger
+    thread_id: ThreadId
+    workload: Workload              # chat | eval | report
 ```
+
+- `principal_for(employee)` is the only place scopes and groups are derived. Scopes are coarse (tool-level); domain policies (M01) stay fine-grained (entity-level). A tool call needs both.
 
 - Built by the API from a signed token. Passed into graphs through LangGraph's `context_schema` / runtime context, **never** placed in messages sent to the model.
 - Tools receive `RequestContext` through the runtime, not through arguments filled in by the model.
@@ -230,11 +233,17 @@ class Event(BaseModel):
 
 `EventKind`: `run_started`, `node_started`, `node_finished`, `route_decided`, `token`, `tool_started`, `tool_finished`, `retrieval_done`, `guard_verdict`, `gate_fired`, `approval_required`, `approval_resolved`, `handoff`, `usage_recorded`, `budget_blocked`, `run_finished` (`completed | blocked | interrupted | failed`).
 
+`payload` is validated against one pydantic model per kind (`observability/events.py`); a kind without a registered payload model cannot be emitted. Within `v1`, adding kinds or optional payload fields is allowed; renaming/removing fields or changing types requires `opsdesk.event.v2`. JSON-schema snapshots in `tests/contract/snapshots/` make any change visible in review.
+
 One event goes to several **sinks**: SSE (filtered through an allowlist), local JSONL (always on) and evaluation (to build `AgentResult`). Traces to LangSmith/Langfuse go through separate callbacks; **audit** records are written through a dedicated API, not through the event bus.
 
 > Three concepts must stay separate: **event** (stream/UI/eval) · **trace** (observability backend) · **audit** (tamper-evident evidence). All three share the same `request_id`.
 
-### 6.4 Index contract v1 (W2 L2)
+### 6.4 Repositories and tenant scoping (M01)
+
+Every repository lookup takes a `tenant_id`, so tenant isolation is enforced by the shape of the API. The one deliberate exception is `SoftwareRepository`: the software catalogue is global by design and contains no tenant data (ownership of a licence lives on `Employee`, which is tenant-scoped).
+
+### 6.5 Index contract v1 (W2 L2)
 
 ```python
 class IndexedChunk(BaseModel, frozen=True):
@@ -260,7 +269,7 @@ class IndexManifest(BaseModel):
 
 Ingestion writes a new version directory → validates → atomically switches the `CURRENT` pointer file (written to a temp file, then `os.replace`; no symlinks, so it works on Windows). Serving resolves `CURRENT`, checks `schema_version`, and fails closed if the index is missing or broken.
 
-### 6.5 Policy config (W3 L1, L3)
+### 6.6 Policy config (W3 L1, L3)
 
 `config/policy.yaml`, loaded with pydantic and validated at startup:
 
