@@ -1,0 +1,51 @@
+# Access requests (M01 §5): several pending, one approved, one rejected.
+# decided_by / decided_at are present only for approved/rejected (model invariant).
+
+- id: AR-001
+  tenant_id: acme
+  requester_id: E-001
+  kind: software_licence
+  software_id: SW-JETBRAINS
+  justification: Need IntelliJ for the Java backend migration.
+  status: pending_approval          # HIGH_COST: waiting for a manager
+  created_at: 2026-03-02T02:10:00Z
+
+- id: AR-002
+  tenant_id: acme
+  requester_id: E-005
+  kind: admin_rights
+  software_id: null
+  justification: Local admin needed to install driver updates for field laptops.
+  status: pending_approval          # ADMIN_RIGHTS
+  created_at: 2026-03-02T03:00:00Z
+
+- id: AR-003
+  tenant_id: acme
+  requester_id: E-006
+  kind: software_licence
+  software_id: SW-FIGMA
+  justification: Review UI mock-ups with the design team.
+  status: pending_approval          # P4: Khanh cannot approve this; Lan can
+  created_at: 2026-03-02T04:20:00Z
+
+- id: AR-004
+  tenant_id: acme
+  requester_id: E-002
+  kind: software_licence
+  software_id: SW-ADOBE-CC
+  justification: Photoshop and Illustrator for the brand refresh.
+  status: approved
+  decided_by: E-006
+  decided_at: 2026-02-24T08:00:00Z
+  created_at: 2026-02-23T02:00:00Z
+
+- id: AR-005
+  tenant_id: acme
+  requester_id: E-004
+  kind: software_licence
+  software_id: SW-JETBRAINS
+  justification: Want to try DataGrip for reporting queries.
+  status: rejected
+  decided_by: E-007
+  decided_at: 2026-02-26T09:30:00Z
+  created_at: 2026-02-25T07:00:00Z

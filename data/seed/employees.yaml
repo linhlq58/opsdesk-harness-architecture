@@ -1,0 +1,68 @@
+# Employees (M01 §5). Each persona exists to exercise specific policy cases.
+# Every employee has the "employee" role; the model rejects anyone without it.
+
+# ------------------------------------------------------------------------- Acme
+- id: E-001
+  tenant_id: acme
+  full_name: An Nguyen
+  email: an.nguyen@acme.example
+  department: engineering
+  roles: [employee]
+  owned_software: [SW-VSCODE, SW-SLACK]   # regular reporter; ALREADY_OWNED cases
+
+- id: E-002
+  tenant_id: acme
+  full_name: Binh Tran
+  email: binh.tran@acme.example
+  department: design
+  roles: [employee]
+  owned_software: [SW-SLACK, SW-FIGMA]    # design-only software (Adobe CC)
+
+- id: E-003
+  tenant_id: acme
+  full_name: Chi Le
+  email: chi.le@acme.example
+  department: hr
+  roles: [employee, hr]                   # V6: HR role grants no ticket access
+  owned_software: [SW-SLACK, SW-ZOOM]
+
+- id: E-004
+  tenant_id: acme
+  full_name: Dung Pham
+  email: dung.pham@acme.example
+  department: finance
+  roles: [employee, finance]              # finance-only software (Power BI)
+  owned_software: [SW-SLACK]
+
+- id: E-005
+  tenant_id: acme
+  full_name: Hoa Vo
+  email: hoa.vo@acme.example
+  department: it
+  roles: [employee, it_staff]             # IT staff: works tickets, cannot approve (P3)
+  owned_software: [SW-VSCODE, SW-SLACK, SW-DOCKER]
+
+- id: E-006
+  tenant_id: acme
+  full_name: Khanh Do
+  email: khanh.do@acme.example
+  department: it
+  roles: [employee, it_manager]           # main approver; has own pending request (P4)
+  owned_software: [SW-SLACK, SW-ZOOM]
+
+- id: E-007
+  tenant_id: acme
+  full_name: Lan Bui
+  email: lan.bui@acme.example
+  department: it
+  roles: [employee, it_manager]           # second approver: can decide Khanh's request
+  owned_software: [SW-SLACK]
+
+# ----------------------------------------------------------------------- Globex
+- id: G-001
+  tenant_id: globex
+  full_name: Minh Hoang
+  email: minh.hoang@globex.example
+  department: it
+  roles: [employee, it_manager]           # V1 / P2: manager, but wrong tenant
+  owned_software: []

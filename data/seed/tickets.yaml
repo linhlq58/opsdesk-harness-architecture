@@ -1,0 +1,133 @@
+# Tickets (M01 §5). Covers every status, several reporters, one Globex ticket.
+# Times are ISO 8601 with an explicit UTC offset ("Z"); naive times are rejected.
+# asset_tag refers to the external asset system (M08); OpsDesk stores only the tag.
+
+- id: T-0001
+  tenant_id: acme
+  reporter_id: E-001
+  assignee_id: null
+  title: Laptop does not boot after update
+  description: Black screen with a blinking cursor since this morning's OS update.
+  category: hardware
+  priority: high
+  status: open
+  asset_tag: LAP-1042
+  created_at: 2026-03-02T01:15:00Z
+  updated_at: 2026-03-02T01:15:00Z
+
+- id: T-0002
+  tenant_id: acme
+  reporter_id: E-001
+  assignee_id: E-005
+  title: VPN disconnects every few minutes
+  description: The VPN client drops the connection when working from home.
+  category: network
+  priority: medium
+  status: in_progress
+  asset_tag: LAP-1042
+  created_at: 2026-03-02T02:00:00Z
+  updated_at: 2026-03-02T03:30:00Z
+
+- id: T-0003
+  tenant_id: acme
+  reporter_id: E-002
+  assignee_id: E-005
+  title: Figma fonts missing
+  description: Company fonts do not show up in Figma desktop.
+  category: software
+  priority: low
+  status: waiting_on_user
+  asset_tag: null
+  created_at: 2026-03-01T08:00:00Z
+  updated_at: 2026-03-02T04:00:00Z
+
+- id: T-0004
+  tenant_id: acme
+  reporter_id: E-003
+  assignee_id: E-005
+  title: Cannot access the shared HR drive
+  description: Permission denied when opening the HR folder on the file server.
+  category: access
+  priority: high
+  status: resolved
+  asset_tag: null
+  created_at: 2026-02-27T07:30:00Z
+  updated_at: 2026-02-28T09:00:00Z
+
+- id: T-0005
+  tenant_id: acme
+  reporter_id: E-004
+  assignee_id: E-005
+  title: Printer on floor 3 jams
+  description: Paper jams on every second page.
+  category: hardware
+  priority: low
+  status: closed
+  asset_tag: PRN-0301
+  created_at: 2026-02-20T02:00:00Z
+  updated_at: 2026-02-21T06:00:00Z
+
+- id: T-0006
+  tenant_id: acme
+  reporter_id: E-001
+  assignee_id: null
+  title: Suspicious email asking for my password
+  description: Received an email that looks like the company login page.
+  category: security
+  priority: critical
+  status: open
+  asset_tag: null
+  created_at: 2026-03-02T05:45:00Z
+  updated_at: 2026-03-02T05:45:00Z
+
+- id: T-0007
+  tenant_id: acme
+  reporter_id: E-002
+  assignee_id: null
+  title: Request a second monitor
+  description: Would like a second monitor for design work.
+  category: other
+  priority: low
+  status: closed                    # withdrawn by the reporter (open -> closed)
+  asset_tag: null
+  created_at: 2026-02-25T03:00:00Z
+  updated_at: 2026-02-25T04:00:00Z
+
+- id: T-0008
+  tenant_id: acme
+  reporter_id: E-006
+  assignee_id: E-005
+  title: Outlook crashes when opening calendar
+  description: Outlook closes immediately when switching to the calendar view.
+  category: software
+  priority: medium
+  status: in_progress
+  asset_tag: LAP-0907
+  created_at: 2026-03-01T06:00:00Z
+  updated_at: 2026-03-01T07:00:00Z
+
+- id: T-0009
+  tenant_id: acme
+  reporter_id: E-001
+  assignee_id: E-005
+  title: Docker Desktop will not start
+  description: Docker Desktop reports that virtualisation is disabled.
+  category: software
+  priority: medium
+  status: resolved
+  asset_tag: LAP-1042
+  created_at: 2026-02-26T02:00:00Z
+  updated_at: 2026-02-27T02:00:00Z
+
+- id: T-0010
+  tenant_id: globex
+  reporter_id: G-001
+  assignee_id: null
+  title: Wi-Fi unstable in Globex meeting room
+  description: Globex-only ticket, used to prove Acme users can never see it.
+  category: network
+  priority: medium
+  status: open
+  asset_tag: null
+  created_at: 2026-03-02T00:30:00Z
+  updated_at: 2026-03-02T00:30:00Z

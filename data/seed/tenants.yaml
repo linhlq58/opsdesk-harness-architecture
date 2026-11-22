@@ -1,0 +1,6 @@
+# Tenants (M01 §5). Acme is the main tenant; Globex exists only for isolation tests.
+- id: acme
+  name: Acme Corporation
+
+- id: globex
+  name: Globex Industries

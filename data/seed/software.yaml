@@ -1,0 +1,38 @@
+# Software catalogue (M01 §5). Shared reference data, not tenant-scoped.
+# annual_cost is whole VND. Never write decimals here: the loader rejects floats.
+# Review threshold used in examples and tests: 5,000,000 VND (Figma sits exactly on it).
+
+- id: SW-VSCODE
+  name: Visual Studio Code
+  annual_cost: 0
+
+- id: SW-SLACK
+  name: Slack
+  annual_cost: 1_200_000
+
+- id: SW-ZOOM
+  name: Zoom Pro
+  annual_cost: 3_600_000
+
+- id: SW-FIGMA
+  name: Figma
+  annual_cost: 5_000_000            # exactly the threshold -> needs approval (A2)
+
+- id: SW-JETBRAINS
+  name: JetBrains All Products
+  annual_cost: 7_500_000            # above threshold -> needs approval
+
+- id: SW-ADOBE-CC
+  name: Adobe Creative Cloud
+  annual_cost: 15_000_000
+  restricted_to: [design]           # anyone else -> rejected (DEPARTMENT_RESTRICTED)
+
+- id: SW-POWERBI
+  name: Power BI Pro
+  annual_cost: 4_000_000
+  restricted_to: [finance]          # engineering asking -> rejected (A6)
+
+- id: SW-DOCKER
+  name: Docker Desktop
+  annual_cost: 2_400_000
+  requires_admin: true              # cheap, but needs approval (ADMIN_RIGHTS)

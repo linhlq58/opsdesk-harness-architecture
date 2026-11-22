@@ -5,6 +5,7 @@ description = "Internal IT Helpdesk assistant built as a production-grade agent 
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
+    "aiosqlite>=0.22.1,<0.23",
     "pydantic>=2.14.4,<3.0.0",
     "pydantic-settings>=2.16.3,<3.0.0",
     "pyyaml>=6.0.4,<7.0.0",
@@ -35,6 +36,7 @@ lint      = { cmd = "ruff check .", help = "Lint" }
 typecheck = { cmd = "pyright", help = "Type-check (strict for src/)" }
 arch      = { cmd = "lint-imports", help = "Check architecture contracts" }
 test      = { cmd = "pytest", help = "Run tests" }
+seed      = { cmd = "python -m opsdesk.persistence.seed", help = "Rebuild var/opsdesk.db from data/seed (idempotent)" }
 check     = { sequence = ["fmt-check", "lint", "typecheck", "arch", "test"], help = "Everything CI runs" }
 
 # --------------------------------------------------------------------- ruff

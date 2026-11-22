@@ -21,6 +21,7 @@ The software catalogue is the one exception to tenant scoping: it is shared refe
 data (product names and prices) and holds nothing that belongs to a tenant.
 """
 
+from dataclasses import dataclass
 from typing import Protocol
 
 from opsdesk.domain.ids import AccessRequestId, EmployeeId, SoftwareId, TenantId, TicketId
@@ -83,3 +84,18 @@ class AccessRequestRepository(Protocol):
         ...
 
     async def save(self, request: AccessRequest) -> None: ...
+
+
+@dataclass(frozen=True, slots=True)
+class Repositories:
+    """All repositories of one storage backend, passed around as a single object.
+
+    Built by the persistence layer (``in_memory_repositories()``, SQLite in step 3);
+    consumed by the seed loader now and by tools / services from M03.
+    """
+
+    tenants: TenantRepository
+    employees: EmployeeRepository
+    tickets: TicketRepository
+    software: SoftwareRepository
+    access_requests: AccessRequestRepository
