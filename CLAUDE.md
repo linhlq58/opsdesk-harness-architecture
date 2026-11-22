@@ -28,6 +28,8 @@ If a task is not marked, apply the rule above; ask only if it is genuinely uncle
 1. **Version check first**: before coding, compare installed vs latest versions and read the changelog of every package the milestone touches; note API differences from the course material in the milestone's Notes.
 2. **Eval cases are part of done (from M07 on)**: add at least one deterministic case to `evals/datasets/` per milestone and keep the eval gate green.
 3. **Temporary adapters, permanent contracts**: a stub tool may stand in for a later capability (e.g. static FAQ before RAG), but it goes through the tool registry, `ToolResult` and events like the real one.
+4. **Wiring and demo**: every milestone file follows `docs/milestones/_template.md`, including a **Wiring** table (which existing pieces the milestone uses, step by step) and a **Demo scenario** under `demos/`, runnable with `uv run poe demo mNN` (fake model, deterministic, part of CI) and `--live` (real model, manual). The milestone is not done until its demo runs.
+5. **Explain along the request flow**: when explaining 📖 code or reviewing, follow a demo scenario step by step with `file:line` references, rather than describing files one by one.
 
 See `docs/roadmap.md` for the full plan.
 

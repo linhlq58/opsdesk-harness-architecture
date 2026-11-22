@@ -16,6 +16,7 @@ Estimate: 25 milestones (three are split into a/b parts), roughly 30–40 sessio
 1. **Version check first.** Before writing code, check the installed and latest versions and the changelog of every package the milestone touches (LangChain, LangGraph, langchain-mcp-adapters, Langfuse, RAGAS, deepeval, a2a-sdk, deepagents change quickly). Record any API difference from the course material in the milestone's Notes.
 2. **Eval cases are part of done (from M07 on).** Every milestone adds at least one deterministic eval case (expected route, tools, status or reason code) to `evals/datasets/`, and the deterministic eval gate stays green.
 3. **Temporary adapters are allowed, temporary contracts are not.** A stub tool may stand in for a capability that arrives later, but it goes through the same tool registry, `ToolResult` and events as the real one, so swapping it changes no agent code.
+4. **Wiring and demo.** Each milestone file follows `docs/milestones/_template.md`: a **Wiring** table shows which existing pieces the milestone uses at each step, and a **Demo scenario** (`uv run poe demo mNN`) shows them working together. Self-check questions trace a concrete request through the system.
 
 ---
 
@@ -82,3 +83,4 @@ Estimate: 25 milestones (three are split into a/b parts), roughly 30–40 sessio
 | Multimodal sources in M09 | Covered in W2 L2, previously missing |
 | ROI estimate in M21 | Covered in W1 L5, previously missing |
 | Version check as the first step of every milestone | Agent libraries change APIs faster than the course material |
+| Wiring table + runnable demo in every milestone (from M03) | Pieces built in M00–M02 were hard to connect because nothing used them yet; every milestone now shows how its pieces fit together |
