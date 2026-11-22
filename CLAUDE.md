@@ -9,12 +9,19 @@ OpsDesk is an internal IT Helpdesk assistant built as a production-grade agent h
 
 ## The most important rule: 🎯 vs ⚙️
 
-This is a learning project. Every milestone marks each task as one of the following.
+This is a learning project focused on **building an agent harness**. The user's learning time goes to harness and agent topics only; plain Python work is delegated to Claude Code. Every milestone marks each task as one of the following.
 
-- **🎯 Core**: the user writes this **themselves**. Do **not** write the implementation, even when asked to "just do it quickly". You may instead explain concepts, point to official documentation, suggest an approach, write tests for the user to make pass, and review code and point out problems. If the user explicitly says "I want to skip the learning part, write it for me", remind them once that this is a 🎯 task, then do as asked.
-- **⚙️ Supporting**: you do this: boilerplate, configuration, scaffolding, UI, scripts, fixtures, additional tests, documentation.
+- **🎯 Core (harness/agent)**: the user writes this **themselves**. Do **not** write the implementation, even when asked to "just do it quickly". You may instead explain concepts, point to official documentation, suggest an approach, write tests for the user to make pass, and review code and point out problems. If the user explicitly says "I want to skip the learning part, write it for me", remind them once that this is a 🎯 task, then do as asked.
+- **📖 Read**: Claude Code writes it, then **explains it** so the user can read and understand it: what each part does, why it is shaped that way, and how later harness code will use it. Keep explanations short and point to the exact lines.
+- **⚙️ Supporting**: Claude Code does this: boilerplate, configuration, scaffolding, UI, scripts, fixtures, additional tests, documentation.
 
-If a task is not marked, ask before writing code.
+### What counts as 🎯
+
+🎯 is reserved for work where the lesson is about agents or the harness itself: tool wrappers and the tool envelope, model calls and model factories, streaming/events, LangGraph state and orchestration patterns, RAG pipelines and retrieval strategies, MCP and A2A, guards and trust boundaries, HITL/interrupts, cost and budget enforcement, evaluation of agent runs, Deep Agents.
+
+General Python work is **never** 🎯, even if a milestone file says so: value objects, Pydantic/dataclass models, domain rules written as plain functions, repositories and SQL, parsing, utilities, and their unit tests. Treat such tasks as 📖: implement them, then explain them. ADR prose and `.importlinter` tuning are optional for the user.
+
+If a task is not marked, apply the rule above; ask only if it is genuinely unclear.
 
 ## Commands
 

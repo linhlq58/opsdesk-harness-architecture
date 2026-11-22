@@ -2,7 +2,9 @@
 
 Each milestone takes 1–2 sessions (1–2 hours each). When a milestone is finished, the code must **run, pass all tests, and be committed**.
 
-Legend: 🎯 core work you write yourself (Claude Code may only explain, hint or review) · ⚙️ supporting work delegated to Claude Code.
+Legend: 🎯 core harness/agent work you write yourself (Claude Code may only explain, hint or review) · 📖 Claude Code writes it and explains it, you read and understand it · ⚙️ supporting work delegated to Claude Code.
+
+> **Focus rule:** your own coding time goes to the harness and agents. Plain Python (value objects, models, domain rules, repositories, utilities) is 📖 everywhere, even where a row below still lists it under 🎯. See `CLAUDE.md` → "What counts as 🎯".
 
 Estimate: 22 milestones, roughly 30–40 sessions.
 
@@ -13,7 +15,7 @@ Estimate: 22 milestones, roughly 30–40 sessions.
 | # | Milestone | 🎯 You write | ⚙️ Claude Code | Course topics |
 |---|---|---|---|---|
 | M00 | Repository skeleton | Read and adapt `.importlinter` (layer rules) | uv, ruff, pyright, pytest, pre-commit, GitHub Actions CI (Linux + Windows), poe tasks, VS Code settings, Settings | Layered architecture |
-| M01 | Domain & seed data | `domain/models.py`, `domain/policies/` (ownership, access, approval) + unit tests | YAML seed data, SQLite repositories | W1 L2 (verification), W4 L3 (plain Python) |
+| M01 | Domain & seed data | — (📖 read: `Money`, domain models, policies, ports) | Everything: models, policies, ports, YAML seed data, SQLite repositories, tests | W1 L2 (verification), W4 L3 (plain Python) |
 | M02 | Core contracts | `Principal`, `RequestContext`, `ToolResult` + error taxonomy, `Event` v1 + bus + JSONL sink | Contract tests for the schemas | W1 L2, L4 |
 
 ## Phase 1 — Basic harness (Week 1)
