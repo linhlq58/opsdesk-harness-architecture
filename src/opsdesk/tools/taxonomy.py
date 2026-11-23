@@ -11,6 +11,7 @@ A domain policy says "no" in one of two ways (see ``domain.errors``):
 input                      status       error_code
 =========================  ===========  ==================================
 ``InvalidTransition``      ``invalid``  ``"invalid_transition"``
+``InvalidIdentifier``      ``invalid``  ``"invalid_id"``
 ``NotPermitted(reason=r)`` ``denied``   ``r.value``, or ``"not_permitted"``
 ``Decision.deny(r)``       ``denied``   ``r.value``
 any other ``DomainError``  ``invalid``  ``"domain_error"``
@@ -32,7 +33,12 @@ from typing import Never
 
 from opsdesk.core.result import ToolResult
 from opsdesk.domain.decisions import Decision, ReasonCode
-from opsdesk.domain.errors import DomainError, InvalidTransition, NotPermitted
+from opsdesk.domain.errors import (
+    DomainError,
+    InvalidIdentifier,
+    InvalidTransition,
+    NotPermitted,
+)
 
 # Written for the model to read and relay. No ids, no tenant names, and CROSS_TENANT
 # deliberately does not confirm that the item exists somewhere else.
@@ -53,6 +59,8 @@ _SAFE_MESSAGES: Mapping[ReasonCode, str] = MappingProxyType(
 )
 _NOT_PERMITTED = "You are not allowed to perform this action."
 _INVALID_TRANSITION = "That status change is not possible for this ticket."
+# No echo of the bad value: it came from the model or the user and may be anything.
+_INVALID_ID = "That id is not in a valid format. Ticket ids look like T-0001."
 _DOMAIN_ERROR = "This request cannot be completed."
 
 
@@ -76,6 +84,8 @@ def result_from_domain_error(
     match exc:
         case InvalidTransition():
             return ToolResult.invalid(safe_message or _INVALID_TRANSITION, "invalid_transition")
+        case InvalidIdentifier():
+            return ToolResult.invalid(safe_message or _INVALID_ID, "invalid_id")
         case NotPermitted(reason=ReasonCode() as reason):
             return ToolResult.denied(safe_message or _SAFE_MESSAGES[reason], reason.value)
         case NotPermitted():

@@ -9,6 +9,14 @@ from typing import Any
 import pytest
 
 from opsdesk.domain.models import AccessRequest, Employee, SoftwareItem, Ticket
+from opsdesk.domain.ports import Repositories
+from support import (
+    CallTool,
+    MakeCaller,
+    call_tool_via_agent,
+    make_caller_for,
+    seeded_repositories,
+)
 
 
 @pytest.fixture
@@ -94,3 +102,28 @@ def make_access_request() -> Factory[AccessRequest]:
         return AccessRequest.model_validate(data | overrides)
 
     return make
+
+
+# ------------------------------------------------------------- harness fixtures (M03)
+# Helpers live in ``tests/support.py`` so test modules can import their types.
+
+
+@pytest.fixture
+async def seed_repos() -> Repositories:
+    """Fresh in-memory repositories loaded with the real seed (data/seed)."""
+    return await seeded_repositories()
+
+
+@pytest.fixture
+def make_caller(seed_repos: Repositories) -> MakeCaller:
+    """``await make_caller("E-001")``; Globex: ``await make_caller("G-001", "globex")``.
+
+    ``repos=`` swaps the repositories the tools see (e.g. a spy in front of one).
+    """
+    return make_caller_for(seed_repos)
+
+
+@pytest.fixture
+def call_tool() -> CallTool:
+    """Run one tool call through a real ``create_agent`` loop (see ``support``)."""
+    return call_tool_via_agent

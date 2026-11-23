@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "aiosqlite>=0.22.1,<0.23",
+    "langchain>=1.5.2,<2",
+    "langchain-openai>=1.8.5,<2",
     "pydantic>=2.14.4,<3.0.0",
     "pydantic-settings>=2.16.3,<3.0.0",
     "pyyaml>=6.0.4,<7.0.0",
@@ -37,6 +39,8 @@ typecheck = { cmd = "pyright", help = "Type-check (strict for src/)" }
 arch      = { cmd = "lint-imports", help = "Check architecture contracts" }
 test      = { cmd = "pytest", help = "Run tests" }
 seed      = { cmd = "python -m opsdesk.persistence.seed", help = "Rebuild var/opsdesk.db from data/seed (idempotent)" }
+chat      = { cmd = "python -m opsdesk.cli", help = "Chat with the real model: poe chat --as E-001" }
+demo      = { cmd = "python -m demos", help = "Milestone demo: poe demo m03 [--live]" }
 snapshots = { cmd = "pytest tests/contract/test_schemas.py -q", env = { OPSDESK_UPDATE_SNAPSHOTS = "1" }, help = "Regenerate contract JSON-schema snapshots (review the diff!)" }
 check     = { sequence = ["fmt-check", "lint", "typecheck", "arch", "test"], help = "Everything CI runs" }
 
@@ -71,12 +75,12 @@ preview = true          # needed for PLW1514
 explicit-preview-rules = true
 
 [tool.ruff.lint.isort]
-known-first-party = ["opsdesk"]
+known-first-party = ["opsdesk", "demos", "support"]
 
 # ------------------------------------------------------------------- pyright
 [tool.pyright]
 pythonVersion = "3.13"
-include = ["src", "tests"]
+include = ["src", "tests", "demos"]
 strict = ["src"]
 typeCheckingMode = "standard"
 venvPath = "."
@@ -85,9 +89,11 @@ venv = ".venv"
 # -------------------------------------------------------------------- pytest
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["-ra", "--strict-markers", "--strict-config"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "-m", "not live"]
+pythonpath = ["."]  # so tests can import the ``demos`` entry point
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
     "integration: end-to-end tests with fake models",
+    "live: calls the real model; excluded by default, run with `uv run pytest -m live`",
 ]

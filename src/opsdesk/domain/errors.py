@@ -38,3 +38,19 @@ class NotPermitted(DomainError):
     def __init__(self, message: str, reason: ReasonCode | None = None) -> None:
         super().__init__(message)
         self.reason = reason
+
+
+class InvalidIdentifier(DomainError):
+    """A string does not have the format of the id it claims to be.
+
+    Example: ``parse_ticket_id("abc")``. Ids reach the harness from model tool
+    arguments and user text, so a malformed one is an ordinary business error (the
+    model should ask again), not a bug.
+
+    ``kind`` names the id type (``"ticket"``) so callers can map it without parsing
+    the message. The message quotes the bad value: fine for logs, never for the model.
+    """
+
+    def __init__(self, kind: str, value: str) -> None:
+        super().__init__(f"not a valid {kind} id: {value!r}")
+        self.kind = kind
