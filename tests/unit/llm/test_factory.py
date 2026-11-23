@@ -62,6 +62,22 @@ def test_connection_and_tunables_come_from_settings() -> None:
     assert model.request_timeout == 12.0
 
 
+def test_unset_temperature_is_not_sent() -> None:
+    # Reasoning models reject an explicit temperature (other than 1): unset → omitted.
+    model = build_chat_model(ModelRole.SPECIALIST, settings(temperature=None))
+
+    assert isinstance(model, ChatOpenAI)
+    assert "temperature" not in model._default_params  # pyright: ignore[reportPrivateUsage]
+
+
+def test_explicit_zero_temperature_is_sent() -> None:
+    # 0 is a real value (reproducible runs, e.g. the M07 judge), not "unset".
+    model = build_chat_model(ModelRole.SPECIALIST, settings(temperature=0.0))
+
+    assert isinstance(model, ChatOpenAI)
+    assert model._default_params["temperature"] == 0.0  # pyright: ignore[reportPrivateUsage]
+
+
 def test_missing_api_key_is_a_startup_error_naming_the_variable() -> None:
     # The decoy OPENAI_API_KEY in the environment must not rescue it.
     with pytest.raises(LlmConfigError, match="OPENAI_API_KEY"):

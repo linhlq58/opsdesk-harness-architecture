@@ -27,7 +27,7 @@ def test_everything_is_optional(env: pytest.MonkeyPatch) -> None:
     assert s.base_url is None
     assert s.api_key is None
     assert s.model_specialist is None
-    assert s.temperature == 0.0
+    assert s.temperature is None  # not sent to the model
     assert s.timeout_s == 30.0
 
 
@@ -58,6 +58,24 @@ def test_blank_values_count_as_not_configured(env: pytest.MonkeyPatch) -> None:
     s = LlmSettings()
     assert s.api_key is None
     assert s.model_judge is None
+
+
+def test_blank_tunables_use_their_defaults(env: pytest.MonkeyPatch) -> None:
+    env.setenv("OPSDESK_LLM_TEMPERATURE", "")
+    env.setenv("OPSDESK_LLM_TIMEOUT_S", "")
+    s = LlmSettings()
+    assert (s.temperature, s.timeout_s) == (None, 30.0)
+
+
+def test_a_copied_env_example_loads(env: pytest.MonkeyPatch) -> None:
+    # Regression: an untouched copy of .env.example must not fail to load.
+    from pathlib import Path
+
+    example = Path(__file__).resolve().parents[3] / ".env.example"
+    Path(".env").write_text(example.read_text(encoding="utf-8"), encoding="utf-8")
+    s = LlmSettings()
+    assert s.api_key is None
+    assert (s.temperature, s.timeout_s) == (None, 30.0)
 
 
 def test_api_key_is_not_revealed_by_repr(env: pytest.MonkeyPatch) -> None:

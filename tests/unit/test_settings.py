@@ -14,6 +14,16 @@ def test_defaults(clean_env: pytest.MonkeyPatch) -> None:
     assert settings.log_level == "INFO"
 
 
+def test_blank_values_use_defaults(clean_env: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    # A copied .env.example has empty lines: they must mean "default", not "invalid".
+    (tmp_path / ".env").write_text(
+        "OPSDESK_APP_ENV=\nOPSDESK_VAR_DIR=\nOPSDESK_LOG_LEVEL=\n", encoding="utf-8"
+    )
+    settings = Settings()
+
+    assert (settings.app_env, settings.var_dir, settings.log_level) == ("dev", Path("var"), "INFO")
+
+
 def test_loads_from_environment(clean_env: pytest.MonkeyPatch, tmp_path: Path) -> None:
     clean_env.setenv("OPSDESK_APP_ENV", "test")
     clean_env.setenv("OPSDESK_VAR_DIR", str(tmp_path / "data"))

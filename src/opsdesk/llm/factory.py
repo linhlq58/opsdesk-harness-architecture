@@ -13,7 +13,9 @@ Rules (tests: ``tests/unit/llm/test_factory.py``):
 * Settings come in as a parameter: the factory does not read the environment itself.
   Careful: ``ChatOpenAI`` *does* read ``OPENAI_API_KEY`` / ``OPENAI_BASE_URL`` from the
   environment when you leave them out, so pass both explicitly.
-* ``temperature`` and ``timeout_s`` come from the settings too.
+* ``temperature`` and ``timeout_s`` come from the settings too. An unset temperature
+  is **not sent** (``ChatOpenAI`` omits ``None``), so models that reject it, such as
+  reasoning models, still work.
 * Callbacks (tracing, usage) get attached here in M07: keep one place for that.
 
 Docs: https://docs.langchain.com/oss/python/integrations/chat/openai
@@ -61,7 +63,7 @@ def build_chat_model(role: ModelRole, settings: LlmSettings) -> BaseChatModel:
         model=model_name,
         api_key=settings.api_key,
         base_url=settings.base_url,
-        temperature=settings.temperature,
+        temperature=settings.temperature,  # None → omitted from the request
         timeout=settings.timeout_s,
     )
 

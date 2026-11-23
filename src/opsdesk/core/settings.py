@@ -21,6 +21,9 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         env_prefix="OPSDESK_",
         extra="ignore",
+        # A copied .env.example has empty lines like "OPSDESK_APP_ENV=": an empty
+        # value means "use the default".
+        env_ignore_empty=True,
     )
 
     app_env: AppEnv = "dev"
