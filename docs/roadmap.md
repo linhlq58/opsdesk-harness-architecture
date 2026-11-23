@@ -3,13 +3,13 @@
 Each milestone takes 1–2 sessions (1–2 hours each). When a milestone is finished, the code must **run, pass all tests, and be committed**.
 
 Legend:
-- 🎯 **You write**: harness/agent work (Claude Code may only explain, hint or review)
+- 🎯 **You decide & verify**: harness/agent work. You answer the design decisions, Claude Code implements them, then you predict, run, break and review (see `CLAUDE.md`)
 - 📖 **Read**: Claude Code writes it and explains it; you read it and answer the milestone's self-check questions
 - ⚙️ **Supporting**: Claude Code does it (scaffolding, config, UI, fixtures, data)
 
-> **Focus rule:** your own coding time goes to the harness and agents. Plain Python (value objects, models, domain rules, repositories, SQL, parsing, utilities, and their tests) is always 📖. See `CLAUDE.md` → "What counts as 🎯".
+> **Focus rule:** your time goes to understanding harness architecture and how to use it, not to Python syntax. Claude Code writes all code. For 🎯 pieces you own the **decisions and the verification**; plain Python (value objects, models, domain rules, repositories, SQL, parsing, utilities) is 📖. See `CLAUDE.md` and `docs/learning/python-cheatsheet.md`.
 
-Estimate: 25 milestones (three are split into a/b parts), roughly 30–40 sessions. Phase 0 is almost entirely 📖/⚙️; hands-on harness work starts at M03.
+Estimate: 25 milestones (three are split into a/b parts), roughly 30–40 sessions. Phase 0 is almost entirely 📖/⚙️; harness decisions and verification start at M03.
 
 ## Rules for every milestone from M03 on
 
@@ -22,7 +22,7 @@ Estimate: 25 milestones (three are split into a/b parts), roughly 30–40 sessio
 
 ## Phase 0 — Foundations
 
-| # | Milestone | 🎯 You write | 📖 Read | ⚙️ Claude Code | Course topics |
+| # | Milestone | 🎯 You decide & verify | 📖 Read | ⚙️ Claude Code | Course topics |
 |---|---|---|---|---|---|
 | M00 ✅ | Repository skeleton | — | `.importlinter` contracts | uv, ruff, pyright, pytest, pre-commit, CI (Linux + Windows), poe tasks, VS Code settings, Settings | Layered architecture |
 | M01 ✅ | Domain & seed data | — | `Money`, domain models, policies, ports, unit tests | Seed YAML, in-memory + SQLite repositories, contract tests | W1 L2, W4 L3 |
@@ -30,7 +30,7 @@ Estimate: 25 milestones (three are split into a/b parts), roughly 30–40 sessio
 
 ## Phase 1 — Basic harness (Week 1)
 
-| # | Milestone | 🎯 You write | 📖 Read | ⚙️ Claude Code | Course topics |
+| # | Milestone | 🎯 You decide & verify | 📖 Read | ⚙️ Claude Code | Course topics |
 |---|---|---|---|---|---|
 | M03 | First agent across all 5 layers | Tool wrapper (scope → policy → `ToolResult` → events), ticket tools, `RequestContext` through runtime context, role-based model factory, first `create_agent` answering with the **real model** | Fake model with scripted tool calls for tests | CLI runner, smoke-test command | W1 L2, L3 |
 | M04 | API + SSE + UI v1 | `stream_adapter`: `astream_events(v3)` → Event v1 → SSE (allowlist, redaction, cancellation); multi-turn sessions with `InMemorySaver` (one `thread_id` per tab, Reset = new thread) | Demo-login token helper | FastAPI app, persona picker, chat + timeline UI | W1 L3, W2 L3 |
@@ -40,7 +40,7 @@ Estimate: 25 milestones (three are split into a/b parts), roughly 30–40 sessio
 
 ## Phase 2 — Capabilities & data (Week 2)
 
-| # | Milestone | 🎯 You write | 📖 Read | ⚙️ Claude Code | Course topics |
+| # | Milestone | 🎯 You decide & verify | 📖 Read | ⚙️ Claude Code | Course topics |
 |---|---|---|---|---|---|
 | M08 | MCP: asset management system | MCP tools/resources, tool registry (namespacing + collision check) via `langchain-mcp-adapters`, infrastructure failure → `unavailable`; **swap the M05 fake device tool for MCP** without touching the agents | Server-side PII filter helpers | FastMCP server scaffold, asset data | W2 L1 |
 | M09 | RAG Pipeline A — ingestion | ACL validation (quarantine), atomic publish + manifest, index contract; **multimodal sources**: one document with a table and one image (network diagram), each chunk keeping `modality` and `locator` | Locator-preserving chunker, document parsing | `opsdesk-ingest` CLI, sample KB documents | W2 L2 |
@@ -51,7 +51,7 @@ Estimate: 25 milestones (three are split into a/b parts), roughly 30–40 sessio
 
 ## Phase 3 — Governance (Week 3)
 
-| # | Milestone | 🎯 You write | 📖 Read | ⚙️ Claude Code | Course topics |
+| # | Milestone | 🎯 You decide & verify | 📖 Read | ⚙️ Claude Code | Course topics |
 |---|---|---|---|---|---|
 | M13 | Guards | Trust channels, input guard placement (before any model call), neutralizer at data boundaries, output guard → gate | Pattern/heuristic detectors | Red-team fixtures | W3 L1 |
 | M14a | Access workflow — gates & durable interrupt | Access-request workflow as a graph, approval gates driven by `policy.yaml`, `interrupt` / `Command(resume=...)`, durable checkpointer (`InMemorySaver` → `AsyncSqliteSaver`) | `policy.yaml` loader | Checkpointer wiring | W3 L1, W2 L3 |
@@ -62,7 +62,7 @@ Estimate: 25 milestones (three are split into a/b parts), roughly 30–40 sessio
 
 ## Phase 4 — Multi-agent systems (Week 4)
 
-| # | Milestone | 🎯 You write | 📖 Read | ⚙️ Claude Code | Course topics |
+| # | Milestone | 🎯 You decide & verify | 📖 Read | ⚙️ Claude Code | Course topics |
 |---|---|---|---|---|---|
 | M18a | Orchestrator-worker | Dynamic decomposition of multi-intent requests, worker result envelope (`ok` / `empty` / `error` / `unavailable`), labelled partial results | — | Partial-result rendering in the UI | W4 L1 |
 | M18b | Evaluator-optimizer & verifier | Refinement loop with a hard attempt budget, independent verifier (citations must point to retrieved evidence) | — | — | W4 L1 |
@@ -83,4 +83,5 @@ Estimate: 25 milestones (three are split into a/b parts), roughly 30–40 sessio
 | Multimodal sources in M09 | Covered in W2 L2, previously missing |
 | ROI estimate in M21 | Covered in W1 L5, previously missing |
 | Version check as the first step of every milestone | Agent libraries change APIs faster than the course material |
+| 🎯 redefined: you decide & verify, Claude Code implements; each milestone has Design decisions, Predict, Break-it, Review checklist, Explain-back; Python cheat sheet | Reading and writing Python line by line cost most of the time while the goal is harness architecture; decisions and experiments teach the architecture directly |
 | Wiring table + runnable demo in every milestone (from M03) | Pieces built in M00–M02 were hard to connect because nothing used them yet; every milestone now shows how its pieces fit together |

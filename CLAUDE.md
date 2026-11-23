@@ -7,19 +7,23 @@ OpsDesk is an internal IT Helpdesk assistant built as a production-grade agent h
 2. The current milestone file in `docs/milestones/`
 3. Any relevant ADR in `docs/adr/`
 
-## The most important rule: 🎯 vs ⚙️
+## The most important rule: the user is the architect, Claude Code is the implementer
 
-This is a learning project focused on **building an agent harness**. The user's learning time goes to harness and agent topics only; plain Python work is delegated to Claude Code. Every milestone marks each task as one of the following.
+This is a learning project. The user's goal is to understand **harness architecture and how to use it** (design, operation, debugging, evaluation), not Python syntax. The user is new to Python. Claude Code writes **all** the code; the user's learning happens through decisions, predictions, experiments and reviews. Every milestone marks each task as one of the following.
 
-- **🎯 Core (harness/agent)**: the user writes this **themselves**. Do **not** write the implementation, even when asked to "just do it quickly". You may instead explain concepts, point to official documentation, suggest an approach, write tests for the user to make pass, and review code and point out problems. If the user explicitly says "I want to skip the learning part, write it for me", remind them once that this is a 🎯 task, then do as asked.
-- **📖 Read**: Claude Code writes it, then **explains it** so the user can read and understand it: what each part does, why it is shaped that way, and how later harness code will use it. Keep explanations short and point to the exact lines.
-- **⚙️ Supporting**: Claude Code does this: boilerplate, configuration, scaffolding, UI, scripts, fixtures, additional tests, documentation.
+- **🎯 Harness/agent core: the user decides and verifies, Claude Code implements.**
+  1. **Before coding**, the user answers the milestone's *Design decisions* (D1, D2, ...). Do not implement a 🎯 piece until its decisions are recorded in the milestone's Notes. If a decision is missing, ask for it, presenting the options and their consequences in plain words; do not choose silently.
+  2. Implement exactly the recorded decisions. If you think a decision is wrong, say so and explain why before implementing; the user decides.
+  3. After implementing, **walk the user through the piece at block level**, following a demo scenario: what each block does and which design decision it implements, with `file:line` references. Do not explain Python syntax unless asked; when you do, refer to the pattern number in `docs/learning/python-cheatsheet.md` if it exists.
+  4. Support the user's verification: help them run the *Predict* step, set up the *Break-it* exercises (and revert them), and answer the *Review checklist* by pointing to the exact block for each item. Let the user draw the conclusions.
+- **📖 Read**: plain Python foundations (value objects, models, domain rules, repositories, utilities). Claude Code implements and gives a short explanation along the request flow. No decisions required from the user.
+- **⚙️ Supporting**: boilerplate, configuration, scaffolding, UI, scripts, fixtures, additional tests, documentation. Claude Code does it.
 
 ### What counts as 🎯
 
 🎯 is reserved for work where the lesson is about agents or the harness itself: tool wrappers and the tool envelope, model calls and model factories, streaming/events, LangGraph state and orchestration patterns, RAG pipelines and retrieval strategies, MCP and A2A, guards and trust boundaries, HITL/interrupts, cost and budget enforcement, evaluation of agent runs, Deep Agents.
 
-General Python work is **never** 🎯, even if a milestone file says so: value objects, Pydantic/dataclass models, domain rules written as plain functions, repositories and SQL, parsing, utilities, and their unit tests. Treat such tasks as 📖: implement them, then explain them. ADR prose and `.importlinter` tuning are optional for the user.
+General Python work is never 🎯: value objects, Pydantic/dataclass models, domain rules written as plain functions, repositories and SQL, parsing, utilities, and their unit tests are 📖. ADR prose and `.importlinter` tuning are optional for the user.
 
 If a task is not marked, apply the rule above; ask only if it is genuinely unclear.
 
@@ -29,7 +33,8 @@ If a task is not marked, apply the rule above; ask only if it is genuinely uncle
 2. **Eval cases are part of done (from M07 on)**: add at least one deterministic case to `evals/datasets/` per milestone and keep the eval gate green.
 3. **Temporary adapters, permanent contracts**: a stub tool may stand in for a later capability (e.g. static FAQ before RAG), but it goes through the tool registry, `ToolResult` and events like the real one.
 4. **Wiring and demo**: every milestone file follows `docs/milestones/_template.md`, including a **Wiring** table (which existing pieces the milestone uses, step by step) and a **Demo scenario** under `demos/`, runnable with `uv run poe demo mNN` (fake model, deterministic, part of CI) and `--live` (real model, manual). The milestone is not done until its demo runs.
-5. **Explain along the request flow**: when explaining 📖 code or reviewing, follow a demo scenario step by step with `file:line` references, rather than describing files one by one.
+5. **Explain along the request flow**: when explaining code or reviewing, follow a demo scenario step by step with `file:line` references, at block level, rather than describing files one by one or lines one by one.
+6. **Learning loop for 🎯 pieces**: Design decisions → implement → Predict → run the demo → Break-it → Review checklist → Explain-back (see `docs/milestones/_template.md`).
 
 See `docs/roadmap.md` for the full plan.
 
