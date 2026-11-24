@@ -6,11 +6,15 @@ readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "aiosqlite>=0.22.1,<0.23",
+    "fastapi>=0.165.0,<0.166",
     "langchain>=1.5.2,<2",
     "langchain-openai>=1.8.5,<2",
+    "langgraph>=1.2.24,<1.3",
     "pydantic>=2.14.4,<3.0.0",
     "pydantic-settings>=2.16.3,<3.0.0",
+    "pyjwt>=2.15.1,<3",
     "pyyaml>=6.0.4,<7.0.0",
+    "uvicorn>=0.54.0,<0.55",
 ]
 
 [build-system]
@@ -19,6 +23,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1,<0.29",
     "import-linter>=2.17,<3.0",
     "poethepoet>=0.49.0,<0.50.0",
     "pre-commit>=4.7.0,<5.0.0",
@@ -41,6 +46,7 @@ test      = { cmd = "pytest", help = "Run tests" }
 seed      = { cmd = "python -m opsdesk.persistence.seed", help = "Rebuild var/opsdesk.db from data/seed (idempotent)" }
 chat      = { cmd = "python -m opsdesk.cli", help = "Chat with the real model: poe chat --as E-001" }
 demo      = { cmd = "python -m demos", help = "Milestone demo: poe demo m03 [--live]" }
+dev       = { cmd = "python -m opsdesk.api", help = "API + web UI with auto-reload (127.0.0.1:8000 by default)" }
 snapshots = { cmd = "pytest tests/contract/test_schemas.py -q", env = { OPSDESK_UPDATE_SNAPSHOTS = "1" }, help = "Regenerate contract JSON-schema snapshots (review the diff!)" }
 check     = { sequence = ["fmt-check", "lint", "typecheck", "arch", "test"], help = "Everything CI runs" }
 

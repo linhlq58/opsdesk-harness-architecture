@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpsDesk</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">◆</span>
+      <span class="name">OpsDesk</span>
+      <span class="tag">IT Helpdesk · M04</span>
+    </div>
+    <label class="persona">
+      <span>Persona</span>
+      <select id="persona" aria-label="Persona"></select>
+    </label>
+  </header>
+
+  <main class="layout">
+    <!-- Left: chat -->
+    <section class="panel chat" aria-label="Chat">
+      <div class="panel-head">
+        <h2>Chat</h2>
+        <div class="head-meta">
+          <span id="thread-label" class="muted mono"></span>
+          <button id="reset" type="button" class="ghost" title="Start a new thread">Reset</button>
+        </div>
+      </div>
+      <div id="messages" class="messages" aria-live="polite"></div>
+      <div id="starters" class="starters"></div>
+      <form id="composer" class="composer">
+        <textarea id="input" rows="2" maxlength="4000" placeholder="Ask about your tickets…" required></textarea>
+        <button id="send" type="submit">Send</button>
+      </form>
+    </section>
+
+    <!-- Right: flow (M05) + event timeline -->
+    <section class="panel side" aria-label="Run inspector">
+      <div class="flow-placeholder">
+        <strong>Flow</strong>
+        <span class="muted">The agent flow diagram arrives in M05 (router, subagents, handoffs).</span>
+      </div>
+      <div class="panel-head">
+        <h2>Event timeline</h2>
+        <span class="muted small">exactly what the server sent (allowlisted Event v1)</span>
+      </div>
+      <ol id="timeline" class="timeline"></ol>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

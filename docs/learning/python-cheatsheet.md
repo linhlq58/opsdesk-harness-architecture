@@ -129,6 +129,7 @@ def harness_tool[A: BaseModel, T](...) -> ...: ...             # cách mới (Py
 | `f"dept:{department.value}"` | Chuỗi có chèn biến | `"dept:${department.value}"` |
 | `[t.id for t in tickets if t.open]` | List comprehension: lọc + biến đổi | `tickets.filter { it.open }.map { it.id }` |
 | `x if cond else y` | Biểu thức điều kiện | `if (cond) x else y` |
+| `model or build_chat_model(...)` | Dùng `model` nếu có (không phải `None`/rỗng), không thì vế phải; vế phải chỉ chạy khi cần | `model ?: buildChatModel(...)` |
 | `a \| b` (với set) | Hợp hai tập | `a union b` |
 | `try: ... except DomainError as exc: ...` | Bắt lỗi | `try { } catch (e: DomainError) { }` |
 | `raise X(...)` | Ném lỗi | `throw X(...)` |

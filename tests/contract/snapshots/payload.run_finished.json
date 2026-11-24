@@ -5,7 +5,8 @@
         "completed",
         "blocked",
         "interrupted",
-        "failed"
+        "failed",
+        "cancelled"
       ],
       "type": "string"
     }

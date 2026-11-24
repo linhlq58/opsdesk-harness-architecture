@@ -11,16 +11,21 @@ user turn through an agent:
 * On failure the exception propagates after ``run_finished(failed)``; a
   ``TurnResult(status="failed")`` is never returned (same spirit as D1-A: a bug fails
   loudly, and the entry point decides what the user sees).
-* Single turn: no conversation memory yet (M04).
+* M04: the call carries ``thread_config(ctx)``, so an agent built with a checkpointer
+  continues the thread's conversation; a cancelled task records
+  ``run_finished(cancelled)`` (decision D6) and re-raises. ``stream_turn`` is the
+  streaming sibling and produces the same non-token events.
 
 Tests: ``tests/integration/test_ticket_agent.py``.
 """
 
+import asyncio
 import time
 from dataclasses import dataclass
 from typing import Literal
 
 from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.runnables import RunnableConfig
 
 from opsdesk.agents.base import HarnessAgent
 from opsdesk.core.clock import Clock
@@ -36,6 +41,11 @@ from opsdesk.tools.context import ToolContext
 class TurnResult:
     answer: str
     status: Literal["completed", "failed"]
+
+
+def thread_config(ctx: RequestContext) -> RunnableConfig:
+    """LangGraph config selecting the conversation: the checkpointer key is the thread."""
+    return {"configurable": {"thread_id": ctx.thread_id}}
 
 
 async def run_turn(
@@ -55,19 +65,22 @@ async def run_turn(
         {"workload": ctx.workload.value, "entrypoint": entrypoint},  # no user message
     )
     started = time.perf_counter()
-    status: RunStatus = "failed"  # stays "failed" unless the agent returns normally
+    status: RunStatus = "failed"  # stays "failed" unless the run completes or is cancelled
 
     try:
         # Run the agent loop. The ToolContext travels as ``context``: tools get it,
         # the model never sees it.
         tool_context = ToolContext(request=ctx, repos=repos, recorder=recorder, clock=clock)
         state = await agent.ainvoke(  # pyright: ignore[reportUnknownMemberType]
-            {"messages": [HumanMessage(message)]}, context=tool_context
+            {"messages": [HumanMessage(message)]}, thread_config(ctx), context=tool_context
         )
         messages: list[BaseMessage] = state["messages"]
         answer = messages[-1].text
         status = "completed"
         return TurnResult(answer=answer, status="completed")
+    except asyncio.CancelledError:
+        status = "cancelled"  # D6
+        raise
     finally:
         # Close the run whatever happened, so a crash is visible in the log.
         await recorder.emit(

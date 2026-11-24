@@ -13,18 +13,24 @@ not configured, this file is still the evidence of what ran. Production wiring p
   on disk I/O, and an ``asyncio.Lock`` keeps concurrent writes from interleaving lines.
 * The file is opened and closed for every event: nothing stays open (Windows cannot
   delete an open file), and a crash loses at most the event being written.
+* ``exclude_kinds`` (M04, decision D4): kinds this sink drops. The API passes
+  ``{EventKind.TOKEN}``: the log records *what happened*, not the text of answers.
 """
 
 import asyncio
+from collections.abc import Iterable
 from pathlib import Path
 
-from opsdesk.observability.events import Event
+from opsdesk.observability.events import Event, EventKind
 
 
 class JsonlSink:
-    def __init__(self, directory: Path, name: str = "jsonl") -> None:
+    def __init__(
+        self, directory: Path, name: str = "jsonl", *, exclude_kinds: Iterable[EventKind] = ()
+    ) -> None:
         self._directory = directory
         self._name = name
+        self._exclude = frozenset(exclude_kinds)
         self._lock = asyncio.Lock()
 
     @property
@@ -35,6 +41,8 @@ class JsonlSink:
         return self._directory / f"{event.ts.date().isoformat()}.jsonl"
 
     async def handle(self, event: Event) -> None:
+        if event.kind in self._exclude:
+            return
         line = event.model_dump_json() + "\n"
         path = self.path_for(event)
         async with self._lock:

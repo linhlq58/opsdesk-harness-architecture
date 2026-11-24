@@ -11,6 +11,18 @@
       "title": "Args",
       "type": "object"
     },
+    "call_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Call Id"
+    },
     "tool": {
       "minLength": 1,
       "title": "Tool",

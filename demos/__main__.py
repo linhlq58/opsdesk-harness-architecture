@@ -17,7 +17,7 @@ import sys
 from collections.abc import Sequence
 from typing import TextIO, cast
 
-DEMOS = {"m03": "demos.m03"}
+DEMOS = {"m03": "demos.m03", "m04": "demos.m04"}
 
 
 def main(argv: Sequence[str] | None = None) -> int:

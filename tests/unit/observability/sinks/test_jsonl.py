@@ -73,3 +73,22 @@ async def test_file_is_closed_after_each_write(tmp_path: Path) -> None:
     path = tmp_path / "2026-03-01.jsonl"
     path.unlink()
     assert not path.exists()
+
+
+async def test_excluded_kinds_are_not_written(tmp_path: Path) -> None:
+    # M04 D4: the API's JSONL sink drops token events.
+    sink = JsonlSink(tmp_path, exclude_kinds={EventKind.TOKEN})
+    await sink.handle(_event(0, T0))  # a token
+    finished = Event(
+        seq=1,
+        event_id=EventId("evt_1"),
+        ts=T0,
+        request_id=RequestId("req_1"),
+        thread_id=ThreadId("thr_1"),
+        kind=EventKind.RUN_FINISHED,
+        payload={"status": "completed", "duration_ms": 5},
+    )
+    await sink.handle(finished)
+
+    lines = (tmp_path / "2026-03-01.jsonl").read_text(encoding="utf-8").splitlines()
+    assert [Event.model_validate_json(line).kind for line in lines] == [EventKind.RUN_FINISHED]

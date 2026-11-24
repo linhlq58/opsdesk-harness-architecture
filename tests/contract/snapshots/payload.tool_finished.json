@@ -16,6 +16,18 @@
   },
   "additionalProperties": false,
   "properties": {
+    "call_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Call Id"
+    },
     "duration_ms": {
       "minimum": 0,
       "title": "Duration Ms",

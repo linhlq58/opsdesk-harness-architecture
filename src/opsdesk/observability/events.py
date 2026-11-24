@@ -21,7 +21,13 @@ Within ``opsdesk.event.v1`` you may:
 * add an **optional** field (with a default) to a payload model.
 
 Renaming or removing a field, changing a field's type, or changing what a kind means
-requires ``opsdesk.event.v2``. The UI, stored JSONL files and eval datasets depend on
+requires ``opsdesk.event.v2``.
+
+Open value sets (M04, decision D6): consumers must treat an **unknown value** of a
+status-like field (``run_finished.status``, ``tool_finished.status``) as "other":
+show or count it, never crash and never reject the event. That makes adding a value
+(M04 adds ``run_finished.status = "cancelled"``) allowed within v1. Removing or
+renaming a value still requires v2. The UI, stored JSONL files and eval datasets depend on
 this. The JSON-schema snapshots in ``tests/contract/snapshots/`` make any change
 visible in review.
 """
@@ -93,6 +99,9 @@ class Token(_Payload):
 class ToolStarted(_Payload):
     tool: str = Field(min_length=1)
     args: dict[str, JsonValue]  # redacted by RunRecorder before the event exists
+    # M04: the model's tool-call id, pairing tool_started with its tool_finished (the
+    # UI timeline, and parallel calls from M05). Optional: added within v1.
+    call_id: str | None = None
 
 
 class ToolFinished(_Payload):
@@ -101,9 +110,12 @@ class ToolFinished(_Payload):
     duration_ms: NonNegativeInt
     error_code: str | None = None
     summary: str | None = None  # redacted and truncated by RunRecorder
+    call_id: str | None = None  # M04: same id as the matching tool_started
 
 
-type RunStatus = Literal["completed", "blocked", "interrupted", "failed"]
+# "cancelled" (M04, D6): the client went away and the run was stopped on purpose. Not
+# "failed": cancellations must not count as errors in eval (M07) or monitoring (M16).
+type RunStatus = Literal["completed", "blocked", "interrupted", "failed", "cancelled"]
 
 
 class RunFinished(_Payload):

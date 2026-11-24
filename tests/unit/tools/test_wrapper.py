@@ -103,6 +103,21 @@ async def test_w1_emits_started_then_finished_ok(
     assert {e.request_id for e in an.sink.events} == {an.request.request_id}
 
 
+@pytest.mark.parametrize("scope", [Scope.TICKET_READ, Scope.ACCESS_APPROVE])
+async def test_started_and_finished_share_the_models_call_id(
+    make_caller: MakeCaller, call_tool: CallTool, scope: Scope
+) -> None:
+    # M04: call_id pairs the two rows in the UI timeline, for ok and denied calls alike.
+    an = await make_caller("E-001")  # plain employee: ACCESS_APPROVE is denied
+    await call_tool(Spy().tool(scope), {"text": "hi"}, an.tool_context)
+
+    started, finished = an.sink.events
+    call_id = started.payload["call_id"]
+    assert isinstance(call_id, str)
+    assert call_id.startswith("call_")  # the id ScriptedChatModel put on the tool call
+    assert finished.payload["call_id"] == call_id
+
+
 # ------------------------------------------------------------- W2: missing scope
 
 

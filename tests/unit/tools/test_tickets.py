@@ -161,7 +161,14 @@ async def test_get_ticket_events_name_the_tool(
 
     assert an.sink.kinds() == [EventKind.TOOL_STARTED, EventKind.TOOL_FINISHED]
     started, finished = an.sink.events
-    assert started.payload == {"tool": "get_ticket", "args": {"ticket_id": "T-0002"}}
+    call_id = started.payload["call_id"]
+    assert started.payload == {
+        "tool": "get_ticket",
+        "args": {"ticket_id": "T-0002"},
+        "call_id": call_id,
+    }
+    assert isinstance(call_id, str)
+    assert finished.payload["call_id"] == call_id
     assert (finished.payload["tool"], finished.payload["status"]) == ("get_ticket", "ok")
 
 

@@ -170,3 +170,33 @@ def test_system_prompt_is_written() -> None:
     text = PROMPT.read_text(encoding="utf-8")
     assert text.strip()
     assert "M03 §8" not in text, "replace the placeholder comment with the real prompt"
+
+
+# ------------------------------------------------------------- checkpointer (M04)
+
+
+async def test_with_a_checkpointer_the_thread_remembers_earlier_turns(
+    make_caller: MakeCaller,
+) -> None:
+    from langchain_core.messages import HumanMessage
+    from langchain_core.runnables import RunnableConfig
+    from langgraph.checkpoint.memory import InMemorySaver
+
+    from opsdesk.agents.ticket_agent import build_ticket_agent
+
+    an = await make_caller("E-001")
+    model = ScriptedChatModel.from_script("first answer", "second answer", "fresh answer")
+    agent = build_ticket_agent(model, checkpointer=InMemorySaver())
+    thread_a: RunnableConfig = {"configurable": {"thread_id": "thr_a"}}
+    thread_b: RunnableConfig = {"configurable": {"thread_id": "thr_b"}}
+
+    await agent.ainvoke({"messages": [HumanMessage("q1")]}, thread_a, context=an.tool_context)
+    second = await agent.ainvoke(
+        {"messages": [HumanMessage("q2")]}, thread_a, context=an.tool_context
+    )
+    fresh = await agent.ainvoke(
+        {"messages": [HumanMessage("q3")]}, thread_b, context=an.tool_context
+    )
+
+    assert [m.text for m in second["messages"]] == ["q1", "first answer", "q2", "second answer"]
+    assert [m.text for m in fresh["messages"]] == ["q3", "fresh answer"]

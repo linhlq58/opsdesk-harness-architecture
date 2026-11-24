@@ -11,7 +11,8 @@ The business function only does business:
 The generated tool does, in this order:
 
 1. Read ``ToolContext`` from ``runtime.context``.
-2. Emit ``tool_started`` with the arguments (``RunRecorder`` redacts them).
+2. Emit ``tool_started`` with the arguments (``RunRecorder`` redacts them) and
+   ``call_id`` = the model's tool-call id (M04), which pairs it with ``tool_finished``.
 3. ``require_scope(principal, scope)``; denied → ``result_from_decision(...)`` and the
    business function is **not** called.
 4. Call the business function with the validated arguments model.
@@ -61,6 +62,7 @@ def harness_tool[A: BaseModel, T](
         async def _run(runtime: ToolRuntime[ToolContext, Any], **kwargs: Any) -> str:
             # Step 1: the per-turn context, passed by run_turn as ainvoke(context=...).
             ctx = runtime.context
+            call_id = runtime.tool_call_id  # set by LangGraph from the model's tool call
             started = time.perf_counter()
 
             # Step 2: log the call. kwargs may omit fields with defaults, so rebuild
@@ -68,7 +70,7 @@ def harness_tool[A: BaseModel, T](
             args = args_schema(**kwargs)
             await ctx.recorder.emit(
                 EventKind.TOOL_STARTED,
-                {"tool": name, "args": args.model_dump(mode="json")},
+                {"tool": name, "args": args.model_dump(mode="json"), "call_id": call_id},
             )
 
             # Steps 3-5: every branch only sets ``result``; steps 6-7 run for all.
@@ -91,6 +93,7 @@ def harness_tool[A: BaseModel, T](
                     "error_code": result.error_code,
                     "duration_ms": int((time.perf_counter() - started) * 1000),
                     "summary": _summary(result),
+                    "call_id": call_id,
                 },
             )
 
