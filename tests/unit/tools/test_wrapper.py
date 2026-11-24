@@ -211,3 +211,18 @@ def test_w6_schema_shows_only_business_arguments() -> None:
     dumped = json.dumps(view).lower()
     for hidden in ("runtime", "context", "ctx", "principal", "recorder"):
         assert hidden not in dumped
+
+
+class _NoArgs(BaseModel):
+    pass
+
+
+def test_w7_empty_args_schema_is_rejected_when_the_tool_is_defined() -> None:
+    # langchain-core drops the injected runtime for a schema without fields (M05).
+    with pytest.raises(TypeError, match="has no fields"):
+
+        @harness_tool(name="no_args", description="d", args_schema=_NoArgs, scope=Scope.KB_READ)
+        async def no_args(  # pyright: ignore[reportUnusedFunction]
+            ctx: ToolContext, args: _NoArgs
+        ) -> ToolResult[str]:
+            return ToolResult.ok("never")

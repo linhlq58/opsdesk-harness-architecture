@@ -10,7 +10,14 @@ from opsdesk.security.scopes import Scope
 
 REAL_SEED = Path(__file__).resolve().parents[3] / "data" / "seed"
 S = Scope
-EMPLOYEE = {S.TICKET_READ, S.TICKET_CREATE, S.TICKET_UPDATE, S.ACCESS_REQUEST, S.KB_READ}
+EMPLOYEE = {
+    S.TICKET_READ,
+    S.TICKET_CREATE,
+    S.TICKET_UPDATE,
+    S.ACCESS_REQUEST,
+    S.KB_READ,
+    S.ASSET_READ_OWN,  # M05 D8
+}
 IT_STAFF = EMPLOYEE | {S.ASSET_READ}
 IT_MANAGER = IT_STAFF | {S.ACCESS_APPROVE, S.REPORT_READ}
 

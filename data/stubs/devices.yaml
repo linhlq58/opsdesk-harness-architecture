@@ -1,0 +1,68 @@
+# Fake device inventory (M05 §5.2). TEMPORARY: read by the `list_my_devices` stub
+# tool until M08 replaces it with the external asset system behind MCP. Same tool
+# name, same ToolResult contract.
+#
+# Asset tags match the ones tickets already mention (tickets.yaml): LAP-1042 is An's
+# laptop, PRN-0301 is a shared printer (no assignee), LAP-0907 is Khanh's laptop.
+# Warranty dates are chosen around the course date (2026-11-24): some expired, some
+# not. G-LAP-0007 belongs to Globex, for tenant-isolation checks.
+
+# ------------------------------------------------------------------------- Acme
+- asset_tag: LAP-1042
+  tenant_id: acme
+  assigned_to: E-001
+  type: laptop
+  model: Dell Latitude 7440
+  warranty_end: 2027-03-31
+
+- asset_tag: MON-2201
+  tenant_id: acme
+  assigned_to: E-001
+  type: monitor
+  model: Dell U2723QE
+  warranty_end: 2026-06-30            # expired
+
+- asset_tag: LAP-1077
+  tenant_id: acme
+  assigned_to: E-002
+  type: laptop
+  model: MacBook Pro 14 (M3)
+  warranty_end: 2027-11-15
+
+- asset_tag: LAP-0931
+  tenant_id: acme
+  assigned_to: E-003
+  type: laptop
+  model: Lenovo ThinkPad T14 Gen 2
+  warranty_end: 2025-09-30            # expired
+
+- asset_tag: PHN-0310
+  tenant_id: acme
+  assigned_to: E-003
+  type: phone
+  model: iPhone 15
+  warranty_end: 2026-10-01            # expired
+
+- asset_tag: LAP-0907
+  tenant_id: acme
+  assigned_to: E-006
+  type: laptop
+  model: Lenovo ThinkPad X1 Carbon Gen 11
+  warranty_end: 2027-01-31
+
+- asset_tag: PRN-0301
+  tenant_id: acme
+  assigned_to: null                   # shared office printer: nobody's "own" device
+  type: printer
+  model: HP LaserJet Enterprise M611
+  warranty_end: 2027-06-30
+
+# E-004 (Dung) has no device on purpose: `list_my_devices` returns `empty`.
+
+# ----------------------------------------------------------------------- Globex
+- asset_tag: G-LAP-0007
+  tenant_id: globex
+  assigned_to: G-001
+  type: laptop
+  model: HP EliteBook 840 G10
+  warranty_end: 2027-08-31

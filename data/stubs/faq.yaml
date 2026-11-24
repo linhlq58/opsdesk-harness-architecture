@@ -1,0 +1,75 @@
+# Static FAQ (M05 §5.2). TEMPORARY: read by the `search_faq` stub tool until M10
+# replaces it with retrieval over the real knowledge base. Same tool name, same
+# ToolResult contract, so no agent changes when it is swapped.
+#
+# `keywords` are what the stub matches on (case-insensitive), together with the
+# title. Keep answers short and self-contained: the model quotes them.
+
+- id: FAQ-VPN-01
+  category: network
+  title: How to reset your VPN password
+  keywords: [vpn, password, reset, remote, forticlient]
+  answer: >-
+    Open https://id.acme.example, choose "Reset VPN password", confirm with your
+    authenticator app, then reconnect the VPN client with the new password. The VPN
+    password is separate from your laptop login.
+
+- id: FAQ-VPN-02
+  category: network
+  title: VPN keeps disconnecting
+  keywords: [vpn, disconnect, drops, unstable, connection]
+  answer: >-
+    Update the VPN client to the latest version, switch from Wi-Fi to a wired
+    connection if possible, and disable other VPN or proxy software. If it still drops,
+    open a ticket with the time of each disconnect.
+
+- id: FAQ-PWD-01
+  category: account
+  title: Password policy
+  keywords: [password, policy, length, expire, expiry, rules]
+  answer: >-
+    Passwords need at least 14 characters and are never shared. They do not expire on
+    a schedule; you must change yours immediately if you think someone else knows it.
+
+- id: FAQ-WIFI-01
+  category: network
+  title: Connecting to the office Wi-Fi
+  keywords: [wifi, wi-fi, wireless, office, network, guest]
+  answer: >-
+    Use the "Acme-Corp" network and sign in with your company account. Visitors use
+    "Acme-Guest" with the daily code shown at reception. Never connect company laptops
+    to "Acme-Guest".
+
+- id: FAQ-PRN-01
+  category: hardware
+  title: Adding an office printer
+  keywords: [printer, print, printing, add, queue]
+  answer: >-
+    Open Settings > Printers, choose "Add printer" and pick "Acme-Print" (the secure
+    print queue). Collect your job at any printer by tapping your badge.
+
+- id: FAQ-LAP-01
+  category: hardware
+  title: Laptop replacement policy
+  keywords: [laptop, replacement, replace, new, upgrade, policy, warranty]
+  answer: >-
+    Laptops are replaced every 4 years, or earlier when a repair is not covered by
+    warranty and costs more than half the price of a new one. Ask IT through a ticket;
+    your manager approves the request.
+
+- id: FAQ-SEC-01
+  category: security
+  title: I clicked a link in a suspicious email
+  keywords: [phishing, suspicious, email, link, clicked, scam]
+  answer: >-
+    Disconnect from the network, do not enter any password, and report the email with
+    the "Report phishing" button. Then call the IT security hotline (ext. 4444) right
+    away. Change your password from another device if you typed it on the page.
+
+- id: FAQ-SEC-02
+  category: security
+  title: My laptop or phone was lost or stolen
+  keywords: [lost, stolen, theft, laptop, phone, device, missing]
+  answer: >-
+    Call the IT security hotline (ext. 4444) immediately so the device can be locked
+    and wiped remotely, then open a ticket. Report a theft to the police as well.

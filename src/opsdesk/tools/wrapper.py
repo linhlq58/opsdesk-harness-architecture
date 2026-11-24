@@ -27,7 +27,13 @@ Argument *format* checks live inside the tool, not in ``args_schema`` (decision 
 if ``args_schema`` rejects a value, LangChain answers the model with its own error text
 before this wrapper runs, so no events and no ``ToolResult``.
 
-Tests: ``tests/unit/tools/test_wrapper.py`` (cases W1-W6).
+``args_schema`` must declare at least one field (M05): langchain-core 1.8.4
+(``BaseTool._to_args_and_kwargs``) calls a tool whose schema has no fields with no
+arguments at all, dropping the injected ``runtime``, so the tool would fail on its first
+call with ``TypeError: _run() missing 'runtime'``. The decorator rejects such a schema
+when the tool is defined (import time), with a message that says why.
+
+Tests: ``tests/unit/tools/test_wrapper.py`` (cases W1-W7).
 Docs: https://docs.langchain.com/oss/python/langchain/tools
 """
 
@@ -54,6 +60,14 @@ def harness_tool[A: BaseModel, T](
     *, name: str, description: str, args_schema: type[A], scope: Scope
 ) -> Callable[[ToolFn[A, T]], BaseTool]:
     """Decorator factory: see the module docstring for what the generated tool does."""
+
+    # W7: fail fast at definition time instead of a TypeError on the first call.
+    if not args_schema.model_fields:
+        raise TypeError(
+            f"harness_tool {name!r}: args_schema {args_schema.__name__} has no fields. "
+            "langchain-core calls a tool with an empty schema without its injected "
+            "runtime, so it would fail on every call. Add at least one (optional) argument."
+        )
 
     def decorator(fn: ToolFn[A, T]) -> BaseTool:
         # ToolRuntime[context type, graph state type]. The wrapper never reads the

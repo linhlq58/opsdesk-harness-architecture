@@ -4,7 +4,14 @@ from opsdesk.domain.models import Role
 from opsdesk.security.scopes import ROLE_SCOPES, Scope, scopes_for
 
 S = Scope
-EMPLOYEE = {S.TICKET_READ, S.TICKET_CREATE, S.TICKET_UPDATE, S.ACCESS_REQUEST, S.KB_READ}
+EMPLOYEE = {
+    S.TICKET_READ,
+    S.TICKET_CREATE,
+    S.TICKET_UPDATE,
+    S.ACCESS_REQUEST,
+    S.KB_READ,
+    S.ASSET_READ_OWN,  # M05 D8
+}
 
 
 def test_every_role_is_in_the_table() -> None:
@@ -35,6 +42,12 @@ def test_only_it_manager_can_approve() -> None:
     assert approvers == {Role.IT_MANAGER}
 
 
+def test_only_it_can_read_any_device() -> None:
+    # M05 D8: employees got asset:read_own, not asset:read.
+    readers = {role for role, scopes in ROLE_SCOPES.items() if S.ASSET_READ in scopes}
+    assert readers == {Role.IT_STAFF, Role.IT_MANAGER}
+
+
 def test_table_is_read_only() -> None:
     with pytest.raises(TypeError):
         ROLE_SCOPES[Role.EMPLOYEE] = frozenset(Scope)  # type: ignore[index]
@@ -49,6 +62,7 @@ def test_scope_values_are_stable() -> None:
         "access:request",
         "kb:read",
         "asset:read",
+        "asset:read_own",
         "access:approve",
         "report:read",
     ]

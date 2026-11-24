@@ -29,7 +29,8 @@ class Scope(StrEnum):
     TICKET_UPDATE = "ticket:update"
     ACCESS_REQUEST = "access:request"
     KB_READ = "kb:read"
-    ASSET_READ = "asset:read"
+    ASSET_READ = "asset:read"  # any device in the tenant (IT)
+    ASSET_READ_OWN = "asset:read_own"  # M05 D8: only the devices assigned to the caller
     ACCESS_APPROVE = "access:approve"
     REPORT_READ = "report:read"
 
@@ -41,6 +42,9 @@ _EMPLOYEE = frozenset(
         Scope.TICKET_UPDATE,
         Scope.ACCESS_REQUEST,
         Scope.KB_READ,
+        # M05 D8: employees may ask about their own devices. The tool, not the scope,
+        # limits the answer to the caller's devices (scope = coarse, tool = per entity).
+        Scope.ASSET_READ_OWN,
     }
 )
 _IT_STAFF = _EMPLOYEE | {Scope.ASSET_READ}
