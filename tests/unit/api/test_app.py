@@ -10,6 +10,7 @@ from opsdesk.api.state import AppState
 from opsdesk.core.clock import FixedClock
 from opsdesk.core.settings import Settings
 from opsdesk.llm.fakes import ScriptedChatModel
+from opsdesk.orchestration.threads import Pattern
 
 
 def _app(tmp_path: Path, *, web_dir: Path | None = None) -> FastAPI:
@@ -29,7 +30,9 @@ async def test_lifespan_builds_the_app_state(tmp_path: Path) -> None:
         assert isinstance(state, AppState)
         assert "E-001" in {p.id for p in state.personas}
         assert await state.repos.employees.get("acme", "E-001") is not None  # type: ignore[arg-type]
-        assert state.agent.checkpointer is state.checkpointer  # memory wired into the agent
+        ticket_agent = state.graphs[Pattern.TICKET_AGENT]
+        assert ticket_agent.checkpointer is state.checkpointer  # memory wired into the agent
+        assert Pattern.ROUTER not in state.graphs  # a scripted model alone: no router models
 
 
 async def test_health(tmp_path: Path) -> None:

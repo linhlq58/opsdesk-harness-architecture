@@ -14,7 +14,7 @@ fields leave the server at all**.
   ``thread_id`` (the browser sent it) are not repeated.
 * Frame: ``id:`` = ``seq`` (ordering, E4), ``event:`` = kind, ``data:`` = one JSON line.
 
-Tests: ``tests/unit/api/test_sse.py`` (cases E1-E4).
+Tests: ``tests/unit/api/test_sse.py`` (cases E1-E4, M05 X4).
 """
 
 import json
@@ -38,6 +38,11 @@ ENVELOPE_FIELDS: tuple[str, ...] = (
 ALLOWED: Mapping[EventKind, frozenset[str]] = MappingProxyType(
     {
         EventKind.RUN_STARTED: frozenset({"entrypoint"}),
+        # M05: the flow diagram and the "Routed to" chip. ``route_decided.dropped``
+        # (names the model proposed and the code removed) stays in the log (X4).
+        EventKind.ROUTE_DECIDED: frozenset({"agents", "fallback", "reason"}),
+        EventKind.NODE_STARTED: frozenset({"node"}),
+        EventKind.NODE_FINISHED: frozenset({"node", "duration_ms"}),
         EventKind.TOKEN: frozenset({"text", "agent"}),
         EventKind.TOOL_STARTED: frozenset({"tool", "call_id", "args"}),
         EventKind.TOOL_FINISHED: frozenset(

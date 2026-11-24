@@ -52,15 +52,21 @@ class Api:
         assert response.status_code == 200, response.text
         return response.json()["token"]
 
-    async def new_thread(self, token: str) -> str:
-        response = await self.client.post("/api/threads", headers=_bearer(token))
+    async def new_thread(self, token: str, pattern: str = "ticket_agent") -> str:
+        response = await self.client.post(
+            "/api/threads", json={"pattern": pattern}, headers=_bearer(token)
+        )
         assert response.status_code == 201, response.text
         return response.json()["thread_id"]
 
-    async def chat(self, token: str | None, thread_id: str, message: str) -> httpx.Response:
+    async def chat(
+        self, token: str | None, thread_id: str, message: str, pattern: str = "ticket_agent"
+    ) -> httpx.Response:
         headers = _bearer(token) if token else {}
         return await self.client.post(
-            "/api/chat", json={"thread_id": thread_id, "message": message}, headers=headers
+            "/api/chat",
+            json={"thread_id": thread_id, "pattern": pattern, "message": message},
+            headers=headers,
         )
 
     async def runs_settled(self) -> None:
@@ -124,9 +130,39 @@ async def test_h1_missing_or_bad_token_is_401_and_starts_nothing(
 
 async def test_threads_need_a_token(make_api: MakeApi) -> None:
     async with make_api() as api:
-        response = await api.client.post("/api/threads")
+        response = await api.client.post("/api/threads", json={"pattern": "ticket_agent"})
 
     assert response.status_code == 401
+
+
+async def test_a_thread_must_be_created_for_a_known_pattern(make_api: MakeApi) -> None:
+    async with make_api() as api:
+        an = await api.login("E-001")
+        missing = await api.client.post("/api/threads", json={}, headers=_bearer(an))
+        unknown = await api.client.post(
+            "/api/threads", json={"pattern": "swarm"}, headers=_bearer(an)
+        )
+        created = await api.client.post(
+            "/api/threads", json={"pattern": "router"}, headers=_bearer(an)
+        )
+
+    assert missing.status_code == unknown.status_code == 422
+    assert created.status_code == 201
+    assert created.json()["pattern"] == "router"
+
+
+async def test_a_thread_used_with_another_pattern_looks_like_an_unknown_one(
+    make_api: MakeApi,
+) -> None:
+    async with make_api(*STATUS_SCRIPT) as api:
+        an = await api.login("E-001")
+        router_thread = await api.new_thread(an, "router")
+        wrong_pattern = await api.chat(an, router_thread, "Status of T-0002?", "ticket_agent")
+        unknown = await api.chat(an, "thr_does_not_exist", "Status of T-0002?")
+
+    assert wrong_pattern.status_code == unknown.status_code == 404
+    assert wrong_pattern.json() == unknown.json()
+    assert api.model.received == []  # no run started
 
 
 # ------------------------------------------------------- H2: foreign thread (D5)
@@ -202,7 +238,12 @@ async def test_identity_comes_from_the_token_not_the_body(make_api: MakeApi) -> 
         thread = await api.new_thread(an)
         response = await api.client.post(
             "/api/chat",
-            json={"thread_id": thread, "message": "hi", "employee_id": "E-005"},
+            json={
+                "thread_id": thread,
+                "pattern": "ticket_agent",
+                "message": "hi",
+                "employee_id": "E-005",
+            },
             headers=_bearer(an),
         )
 
@@ -242,7 +283,7 @@ async def test_h4_disconnect_after_first_token_records_cancelled(make_api: MakeA
         result = await stream_post(
             api.app,
             "/api/chat",
-            {"thread_id": thread, "message": "Tell me everything"},
+            {"thread_id": thread, "pattern": "ticket_agent", "message": "Tell me everything"},
             token=an,
             stop=lambda frame: frame.event == "token",
         )

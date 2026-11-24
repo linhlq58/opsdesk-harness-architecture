@@ -69,9 +69,45 @@ def test_e2_kinds_outside_the_allowlist_are_not_sent(kind: EventKind) -> None:
 
 
 def test_e2_a_future_kind_added_to_the_schema_is_invisible_by_default() -> None:
-    node = _event(EventKind.NODE_STARTED, {"node": "router"})  # registered, not allowed
+    # M05 allowed node_started; usage_recorded (M07/M16) is the next one in line.
+    usage = Event.model_construct(
+        **TOOL_STARTED.model_dump(exclude={"kind", "payload"}),
+        kind=EventKind.USAGE_RECORDED,
+        payload={"input_tokens": 10},
+    )
 
-    assert to_sse(node) is None
+    assert to_sse(usage) is None
+
+
+# ------------------------------------------------------------------ M05 router events
+
+
+def test_x4_route_decided_never_sends_dropped_names() -> None:
+    decided = _event(
+        EventKind.ROUTE_DECIDED,
+        {
+            "agents": ["general"],
+            "fallback": True,
+            "reason": "unknown_agent",
+            "dropped": ["billing"],
+        },
+    )
+
+    view = browser_view(decided)
+
+    assert view is not None
+    assert view["payload"] == {"agents": ["general"], "fallback": True, "reason": "unknown_agent"}
+
+
+def test_node_events_send_the_node_and_its_duration() -> None:
+    started = browser_view(_event(EventKind.NODE_STARTED, {"node": "specialist:ticket"}))
+    finished = browser_view(
+        _event(EventKind.NODE_FINISHED, {"node": "specialist:ticket", "duration_ms": 40})
+    )
+
+    assert started is not None and finished is not None
+    assert started["payload"] == {"node": "specialist:ticket"}
+    assert finished["payload"] == {"node": "specialist:ticket", "duration_ms": 40}
 
 
 def test_e3_payload_fields_outside_the_allowlist_are_dropped() -> None:

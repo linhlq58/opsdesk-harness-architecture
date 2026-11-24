@@ -9,19 +9,20 @@ they are built for each chat request (M04 §8).
 """
 
 import asyncio
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 from fastapi import Request
 from langgraph.checkpoint.base import BaseCheckpointSaver
 
-from opsdesk.agents.base import HarnessAgent
+from opsdesk.agents.base import TurnGraph
 from opsdesk.api.auth import SessionTokens
 from opsdesk.core.clock import Clock
 from opsdesk.core.settings import Settings
 from opsdesk.domain.models import Employee
 from opsdesk.domain.ports import Repositories
 from opsdesk.observability.sinks.jsonl import JsonlSink
-from opsdesk.orchestration.threads import ThreadRegistry
+from opsdesk.orchestration.threads import Pattern, ThreadRegistry
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,7 +33,9 @@ class AppState:
     personas: tuple[Employee, ...]  # seed employees offered by the persona picker
     tokens: SessionTokens
     checkpointer: BaseCheckpointSaver[str]  # conversation memory, shared by all threads
-    agent: HarnessAgent
+    # M05: what runs a turn, per pattern (all share the checkpointer). A pattern
+    # missing here is not configured in this process (chat answers 501).
+    graphs: Mapping[Pattern, TurnGraph]
     threads: ThreadRegistry  # who owns which thread (D5)
     jsonl: JsonlSink  # shared by all requests (one lock per file); excludes token (D4)
     # Runs in flight. asyncio keeps only weak references to tasks: without this set a

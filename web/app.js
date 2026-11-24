@@ -1,18 +1,46 @@
-// OpsDesk UI v1 (M04). Plain JS, no build step, no framework.
+// OpsDesk UI v2 (M05). Plain JS, no build step, no framework.
 //
-// Flow: persona → POST /api/session (token) → POST /api/threads (thread id) →
-// POST /api/chat, read as an SSE stream with fetch + a stream reader (EventSource
-// only supports GET and cannot send the Authorization header).
+// Flow: persona → POST /api/session (token) → POST /api/threads {pattern} (thread id)
+// → POST /api/chat {thread_id, pattern, message}, read as an SSE stream with fetch + a
+// stream reader (EventSource only supports GET and cannot send the Authorization
+// header).
+//
+// M05: two pattern tabs, "Ticket agent" and "Router". Each tab has its own thread,
+// chat and timeline (a thread only works with the pattern it was created for). The
+// Router tab adds a live flow diagram driven by node_started / node_finished, and a
+// "Routed to" chip (+ fallback badge) from route_decided.
 //
 // Every string from the server is put on screen with textContent, never innerHTML.
 // Unknown event kinds and statuses render as plain rows: the event contract may add
 // them within v1 (open value sets), and the UI must never crash on them.
 "use strict";
 
-const STARTERS = {
-  default: ["What's the status of T-0002?", "List my tickets", "Show me T-0003", "Show ticket abc"],
-  "G-001": ["List my tickets", "Show me T-0002"],
+const PATTERNS = {
+  ticket_agent: {
+    label: "Ticket agent",
+    placeholder: "Ask about your tickets…",
+    starters: {
+      default: ["What's the status of T-0002?", "List my tickets", "Show me T-0003", "Show ticket abc"],
+      "G-001": ["List my tickets", "Show me T-0002"],
+    },
+  },
+  router: {
+    label: "Router",
+    placeholder: "Ask anything IT: tickets, how-to, your devices, security…",
+    starters: {
+      default: [
+        "Is my laptop still under warranty?",
+        "What's the status of T-0002, and how do I reset my VPN password?",
+        "I just clicked a link in a suspicious email",
+        "Show me T-0001",
+        "Hi!",
+      ],
+      "G-001": ["List my tickets and my devices", "How do I connect to the office Wi-Fi?"],
+    },
+  },
 };
+// The router's flow diagram. Specialist ids match AgentSpec names (node "specialist:<name>").
+const SPECIALIST_NODES = ["general", "ticket", "knowledge", "hardware", "security"];
 const KNOWN_STATUSES = new Set([
   "ok", "empty", "not_found", "invalid", "denied", "unavailable", "timeout",
   "completed", "failed", "cancelled", "blocked", "interrupted",
@@ -22,7 +50,8 @@ const state = {
   personas: [],
   persona: null,   // {id, name, ...}
   token: null,
-  threadId: null,
+  pattern: "ticket_agent",
+  tabs: {},        // pattern → {threadId, messages: Element, timeline: Element}
   busy: false,
   controller: null, // AbortController of the running chat request
 };
@@ -34,6 +63,7 @@ const el = (tag, className, text) => {
   if (text !== undefined && text !== null) node.textContent = String(text);
   return node;
 };
+const tab = () => state.tabs[state.pattern];
 
 // ------------------------------------------------------------------ API calls
 
@@ -49,45 +79,96 @@ async function login(persona) {
   state.token = (await res.json()).token;
 }
 
-async function newThread() {
-  let res = await api("/api/threads", { method: "POST" });
+async function newThread(pattern = state.pattern) {
+  const body = { pattern };
+  let res = await api("/api/threads", { method: "POST", body });
   if (res.status === 401) { // token expired or server restarted (random dev secret)
     await login(state.persona);
-    res = await api("/api/threads", { method: "POST" });
+    res = await api("/api/threads", { method: "POST", body });
   }
   if (!res.ok) throw new Error(`could not create a thread (${res.status})`);
-  state.threadId = (await res.json()).thread_id;
-  $("thread-label").textContent = state.threadId.slice(0, 12) + "…";
-  $("thread-label").title = state.threadId;
+  state.tabs[pattern].threadId = (await res.json()).thread_id;
+  if (pattern === state.pattern) showThreadLabel();
 }
 
-// ------------------------------------------------------------------ persona + thread
+function showThreadLabel() {
+  const id = tab().threadId || "";
+  $("thread-label").textContent = id ? id.slice(0, 12) + "…" : "";
+  $("thread-label").title = id;
+}
+
+// ------------------------------------------------------------------ tabs, persona, thread
+
+function buildTabs() {
+  const bar = $("tabs");
+  for (const [pattern, info] of Object.entries(PATTERNS)) {
+    const messages = el("div", "messages");
+    messages.setAttribute("aria-live", "polite");
+    const timeline = el("ol", "timeline");
+    $("messages-host").append(messages);
+    $("timeline-host").append(timeline);
+    state.tabs[pattern] = { threadId: null, messages, timeline };
+
+    const button = el("button", "tab", info.label);
+    button.type = "button";
+    button.dataset.pattern = pattern;
+    button.setAttribute("role", "tab");
+    button.addEventListener("click", () => switchTab(pattern).catch(showError));
+    bar.append(button);
+  }
+}
+
+async function switchTab(pattern) {
+  if (state.busy) return; // finish (or stop) the running turn first
+  state.pattern = pattern;
+  for (const button of document.querySelectorAll(".tab")) {
+    const active = button.dataset.pattern === pattern;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  }
+  for (const [p, t] of Object.entries(state.tabs)) {
+    t.messages.hidden = p !== pattern;
+    t.timeline.hidden = p !== pattern;
+  }
+  $("flow").hidden = pattern !== "router";
+  $("input").placeholder = PATTERNS[pattern].placeholder;
+  if (!tab().threadId && state.persona) await newThread(pattern);
+  showThreadLabel();
+  renderStarters();
+}
 
 async function selectPersona(id) {
   stopRunning();
   state.persona = state.personas.find((p) => p.id === id);
-  // Switching persona = new session + new thread.
+  // Switching persona = new session + new threads (each tab opens its own on first use).
   await login(state.persona);
-  await newThread();
-  $("messages").replaceChildren();
-  $("timeline").replaceChildren();
-  addSystem(`Signed in as ${state.persona.name} (${state.persona.id}, ${state.persona.tenant_id}) · roles: ${state.persona.roles.join(", ")}`);
+  for (const t of Object.values(state.tabs)) {
+    t.threadId = null;
+    t.messages.replaceChildren();
+    t.timeline.replaceChildren();
+  }
+  resetFlow();
+  await newThread(state.pattern);
+  for (const pattern of Object.keys(state.tabs)) {
+    addSystem(`Signed in as ${state.persona.name} (${state.persona.id}, ${state.persona.tenant_id}) · roles: ${state.persona.roles.join(", ")}`, pattern);
+  }
   renderStarters();
 }
 
 async function reset() {
   stopRunning();
-  await newThread(); // Reset = a new thread: the agent forgets the conversation
-  $("messages").replaceChildren();
-  $("timeline").replaceChildren();
-  addSystem("New thread: the agent starts with an empty conversation.");
+  await newThread(); // Reset = a new thread for this tab: the conversation is forgotten
+  tab().messages.replaceChildren();
+  tab().timeline.replaceChildren();
+  if (state.pattern === "router") resetFlow();
+  addSystem("New thread: the conversation starts empty.");
   renderStarters();
 }
 
 function renderStarters() {
-  const list = STARTERS[state.persona?.id] || STARTERS.default;
-  const box = $("starters");
-  box.replaceChildren(...list.map((q) => {
+  const starters = PATTERNS[state.pattern].starters;
+  const list = starters[state.persona?.id] || starters.default;
+  $("starters").replaceChildren(...list.map((q) => {
     const b = el("button", "", q);
     b.type = "button";
     b.addEventListener("click", () => send(q));
@@ -97,16 +178,17 @@ function renderStarters() {
 
 // ------------------------------------------------------------------ chat
 
-function addMessage(role, text, label) {
+function addMessage(role, text, label, pattern = state.pattern) {
   const wrap = el("div", `msg ${role}`);
   if (label) wrap.append(el("span", "who", label));
   const bubble = el("div", "bubble", text);
   wrap.append(bubble);
-  $("messages").append(wrap);
-  scrollToEnd($("messages"));
+  const box = state.tabs[pattern].messages;
+  box.append(wrap);
+  scrollToEnd(box);
   return { wrap, bubble };
 }
-const addSystem = (text) => addMessage("system", text);
+const addSystem = (text, pattern) => addMessage("system", text, undefined, pattern);
 
 function stopRunning() {
   if (state.controller) state.controller.abort(); // the server cancels the run (D6)
@@ -153,7 +235,7 @@ function postChat(message) {
   return fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${state.token}` },
-    body: JSON.stringify({ thread_id: state.threadId, message }),
+    body: JSON.stringify({ thread_id: tab().threadId, pattern: state.pattern, message }),
     signal: state.controller.signal,
   });
 }
@@ -168,6 +250,7 @@ function setBusy(busy) {
   state.busy = busy;
   $("send").disabled = busy;
   $("input").disabled = busy;
+  for (const button of document.querySelectorAll(".tab")) button.disabled = busy;
   if (!busy) $("input").focus();
 }
 
@@ -209,10 +292,43 @@ function parseFrame(block) {
   }
 }
 
+// ------------------------------------------------------------------ flow diagram (M05)
+
+function buildFlow() {
+  const lane = $("flow-specialists");
+  lane.replaceChildren(...SPECIALIST_NODES.map((name) => {
+    const node = el("div", "node specialist", name[0].toUpperCase() + name.slice(1));
+    node.dataset.node = `specialist:${name}`;
+    return node;
+  }));
+}
+
+// Every node back to idle; called when a turn starts and on Reset.
+function resetFlow() {
+  for (const node of document.querySelectorAll("#flow .node")) {
+    node.classList.remove("working", "used");
+  }
+  $("routed").textContent = "";
+  $("routed").hidden = true;
+  $("fallback").hidden = true;
+}
+
+function flowNode(name) {
+  return document.querySelector(`#flow .node[data-node="${CSS.escape(name)}"]`);
+}
+
+// idle → working (node_started) → used (node_finished). Unknown node names are ignored.
+function markNode(name, phase) {
+  const node = flowNode(name);
+  if (!node) return;
+  node.classList.toggle("working", phase === "working");
+  if (phase === "used") node.classList.add("used");
+}
+
 // ------------------------------------------------------------------ events → UI
 
 function startTurn() {
-  return { t0: null, calls: new Map() };
+  return { t0: null, calls: new Map(), pattern: state.pattern };
 }
 
 function onEvent(ev, assistant, turn) {
@@ -220,28 +336,47 @@ function onEvent(ev, assistant, turn) {
   const ts = Date.parse(ev.ts);
   if (ev.kind === "run_started" || turn.t0 === null) turn.t0 = ts;
   const rel = Number.isFinite(ts) && Number.isFinite(turn.t0) ? `+${((ts - turn.t0) / 1000).toFixed(1)}s` : "";
+  const timeline = state.tabs[turn.pattern].timeline;
+  const routerTurn = turn.pattern === "router";
 
   if (ev.kind === "token") {
     assistant.bubble.textContent += p.text ?? "";
     assistant.wrap.querySelector(".who").textContent = p.agent || "assistant";
-    scrollToEnd($("messages"));
+    scrollToEnd(state.tabs[turn.pattern].messages);
     return; // tokens are shown in the chat, not as timeline rows
   }
+
+  if (routerTurn) updateFlow(ev, p);
 
   const row = el("li", ev.kind);
   row.append(el("span", "t", rel), el("span", "kind", ev.kind));
   const detail = el("span", "detail");
   const right = el("span", "right");
+  const where = (ev.namespace || []).join("/");
 
   switch (ev.kind) {
     case "run_started":
       row.classList.add("turn");
       detail.append(el("span", "", `entrypoint ${p.entrypoint ?? ""}`));
       break;
+    case "route_decided":
+      detail.append(el("strong", "", (p.agents || []).join(", ")));
+      if (p.fallback) right.append(el("span", "badge fallback", "fallback"));
+      if (p.reason) right.append(el("span", "code", p.reason));
+      break;
+    case "node_started":
+      detail.append(el("span", "args", p.node ?? "?"));
+      break;
+    case "node_finished":
+      detail.append(el("span", "args", p.node ?? "?"));
+      if (p.duration_ms !== undefined) right.append(el("span", "muted", `${p.duration_ms} ms`));
+      break;
     case "tool_started":
+      if (where) detail.append(el("span", "ns", `${where} · `));
       detail.append(el("strong", "", p.tool ?? "?"), el("span", "args", ` ${formatArgs(p.args)}`));
       break;
     case "tool_finished":
+      if (where) detail.append(el("span", "ns", `${where} · `));
       detail.append(el("strong", "", p.tool ?? "?"));
       if (p.summary) detail.append(el("span", "args", ` ${p.summary}`));
       right.append(badge(p.status));
@@ -265,18 +400,42 @@ function onEvent(ev, assistant, turn) {
     if (ev.kind === "tool_finished" && started) {
       started.after(row); // keep the pair together even if other events came between
       turn.calls.delete(p.call_id);
-      scrollToEnd($("timeline"));
+      scrollToEnd(timeline);
       return;
     }
     if (ev.kind === "tool_started") turn.calls.set(p.call_id, row);
   }
 
-  $("timeline").append(row);
+  timeline.append(row);
   if (ev.kind === "run_finished") {
     const secs = p.duration_ms !== undefined ? (p.duration_ms / 1000).toFixed(1) : "?";
-    $("timeline").append(el("li", "summary-line", `turn ${p.status ?? "finished"} in ${secs} s`));
+    timeline.append(el("li", "summary-line", `turn ${p.status ?? "finished"} in ${secs} s`));
   }
-  scrollToEnd($("timeline"));
+  scrollToEnd(timeline);
+}
+
+function updateFlow(ev, p) {
+  switch (ev.kind) {
+    case "run_started":
+      resetFlow();
+      markNode("query", "used");
+      break;
+    case "route_decided":
+      $("routed").textContent = `Routed to: ${(p.agents || []).join(", ")}`;
+      $("routed").hidden = false;
+      $("fallback").hidden = !p.fallback;
+      $("fallback").textContent = p.reason ? `fallback · ${p.reason}` : "fallback";
+      break;
+    case "node_started":
+      markNode(p.node, "working");
+      break;
+    case "node_finished":
+      markNode(p.node, "used");
+      break;
+    case "run_finished":
+      if (p.status === "completed") markNode("answer", "used");
+      break;
+  }
 }
 
 function badge(status) {
@@ -302,6 +461,8 @@ function scrollToEnd(node) {
 // ------------------------------------------------------------------ boot
 
 async function boot() {
+  buildTabs();
+  buildFlow();
   const res = await api("/api/personas", { auth: false });
   state.personas = await res.json();
   const select = $("persona");
@@ -316,6 +477,7 @@ async function boot() {
   $("input").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send($("input").value); }
   });
+  await switchTab(state.pattern);
   await selectPersona(state.personas[0].id);
 }
 

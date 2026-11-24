@@ -8,11 +8,15 @@ once at startup (``AppState``):
 * the session token signer (``settings.session_secret``, or a random per-process key
   outside ``prod``: see ``core.settings``);
 * the checkpointer (``InMemorySaver``: threads are lost on restart, like the thread
-  registry) and the ticket agent built with it.
+  registry) and one graph per pattern built with it (M05): the ticket agent and the
+  router graph (tool registry and stub data loaded here, once).
 
-Tests and the demo pass a ``ScriptedChatModel`` and a ``FixedClock``; ``poe dev``
-passes nothing and gets the real model (role ``specialist``) and the system clock.
-A missing LLM configuration fails at startup, not on the first chat.
+Models: ``poe dev`` passes nothing and gets the real models (ticket agent: role
+``specialist``; router: roles ``router`` / ``specialist`` / ``synthesizer``) and the
+system clock. A missing LLM configuration fails at startup, not on the first chat.
+Tests and demos pass a ``ScriptedChatModel`` (``model``, ticket agent) and/or
+``RouterModels`` (router graph); with ``model`` but no ``router_models`` the router
+pattern is simply not configured (chat on a router thread answers ``501``).
 
 Routes live in ``api.routes``; ``web/`` is served as static files at ``/`` when it
 exists. On shutdown, runs still in flight are cancelled (each records
@@ -31,6 +35,8 @@ from fastapi.staticfiles import StaticFiles
 from langchain_core.language_models import BaseChatModel
 from langgraph.checkpoint.memory import InMemorySaver
 
+from opsdesk.agents.base import TurnGraph
+from opsdesk.agents.specs import SPECIALISTS
 from opsdesk.agents.ticket_agent import build_ticket_agent
 from opsdesk.api.auth import SessionTokens
 from opsdesk.api.routes import chat, session, threads
@@ -41,9 +47,12 @@ from opsdesk.llm.factory import ModelRole, build_chat_model
 from opsdesk.llm.settings import LlmSettings
 from opsdesk.observability.events import EventKind
 from opsdesk.observability.sinks.jsonl import JsonlSink
-from opsdesk.orchestration.threads import ThreadRegistry
+from opsdesk.orchestration.patterns.router import RouterModels, build_router_graph
+from opsdesk.orchestration.threads import Pattern, ThreadRegistry
 from opsdesk.persistence.memory import in_memory_repositories
 from opsdesk.persistence.seed import DEFAULT_SEED_DIR, load_seed, write_seed
+from opsdesk.tools.registry import default_registry
+from opsdesk.tools.stubs._loader import DEFAULT_STUB_DIR
 
 WEB_DIR = Path(__file__).resolve().parents[3] / "web"
 
@@ -52,8 +61,10 @@ def create_app(
     settings: Settings | None = None,
     *,
     model: BaseChatModel | None = None,
+    router_models: RouterModels | None = None,
     clock: Clock | None = None,
     seed_dir: Path = DEFAULT_SEED_DIR,
+    stub_dir: Path = DEFAULT_STUB_DIR,
     web_dir: Path = WEB_DIR,
 ) -> FastAPI:
     settings = settings or Settings()
@@ -66,6 +77,17 @@ def create_app(
 
         secret = settings.session_secret
         checkpointer = InMemorySaver()
+        graphs: dict[Pattern, TurnGraph] = {
+            Pattern.TICKET_AGENT: build_ticket_agent(
+                model or build_chat_model(ModelRole.SPECIALIST, LlmSettings()),
+                checkpointer=checkpointer,
+            )
+        }
+        models = router_models or (_real_router_models() if model is None else None)
+        if models is not None:
+            graphs[Pattern.ROUTER] = build_router_graph(
+                models, default_registry(stub_dir), SPECIALISTS, checkpointer=checkpointer
+            )
         state = AppState(
             settings=settings,
             clock=clock or SystemClock(),
@@ -77,10 +99,7 @@ def create_app(
                 clock=clock or SystemClock(),
             ),
             checkpointer=checkpointer,
-            agent=build_ticket_agent(
-                model or build_chat_model(ModelRole.SPECIALIST, LlmSettings()),
-                checkpointer=checkpointer,
-            ),
+            graphs=graphs,
             threads=ThreadRegistry(),
             jsonl=JsonlSink(settings.var_dir / "events", exclude_kinds={EventKind.TOKEN}),
         )
@@ -90,7 +109,7 @@ def create_app(
             task.cancel()
         await asyncio.gather(*state.running, return_exceptions=True)
 
-    app = FastAPI(title="OpsDesk", version="0.4.0", lifespan=lifespan)
+    app = FastAPI(title="OpsDesk", version="0.5.0", lifespan=lifespan)
 
     for module in (session, threads, chat):
         app.include_router(module.router)
@@ -103,3 +122,20 @@ def create_app(
     if web_dir.is_dir():
         app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
     return app
+
+
+def _real_router_models() -> RouterModels:
+    """One model per role, shared by every specialist with that role."""
+    settings = LlmSettings()
+    by_role: dict[ModelRole, BaseChatModel] = {}
+
+    def model_for(role: ModelRole) -> BaseChatModel:
+        if role not in by_role:
+            by_role[role] = build_chat_model(role, settings)
+        return by_role[role]
+
+    return RouterModels(
+        router=model_for(ModelRole.ROUTER),
+        synthesizer=model_for(ModelRole.SYNTHESIZER),
+        specialists={spec.name: model_for(spec.role) for spec in SPECIALISTS},
+    )

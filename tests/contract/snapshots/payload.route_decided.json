@@ -1,0 +1,43 @@
+{
+  "additionalProperties": false,
+  "description": "M05: which specialists the router turn will run, after sanitising.\n\n``agents`` is the *final* route set (never empty: a fallback route is still a\nroute). Names only: the self-contained sub-queries the router wrote are **not**\nhere, because they are rewritten user text (events describe what happened, not\nwhat was said).\n\n``reason`` is an open value set (like statuses): ``None`` when the model's\ndecision was used as is, otherwise a short code such as ``\"no_decision\"``,\n``\"unknown_agent\"`` or ``\"capped\"``. Consumers show unknown codes as text.\n\n``dropped`` lists the agent names the model proposed that were removed (unknown,\nduplicate, over the cap, empty query). For the log and evals only: the SSE\nallowlist does not send it to the browser.",
+  "properties": {
+    "agents": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Agents",
+      "type": "array"
+    },
+    "dropped": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Dropped",
+      "type": "array"
+    },
+    "fallback": {
+      "title": "Fallback",
+      "type": "boolean"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reason"
+    }
+  },
+  "required": [
+    "agents",
+    "fallback"
+  ],
+  "title": "RouteDecided",
+  "type": "object"
+}

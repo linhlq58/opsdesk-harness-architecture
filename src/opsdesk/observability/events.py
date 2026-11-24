@@ -91,6 +91,29 @@ class NodeFinished(_Payload):
     duration_ms: NonNegativeInt
 
 
+class RouteDecided(_Payload):
+    """M05: which specialists the router turn will run, after sanitising.
+
+    ``agents`` is the *final* route set (never empty: a fallback route is still a
+    route). Names only: the self-contained sub-queries the router wrote are **not**
+    here, because they are rewritten user text (events describe what happened, not
+    what was said).
+
+    ``reason`` is an open value set (like statuses): ``None`` when the model's
+    decision was used as is, otherwise a short code such as ``"no_decision"``,
+    ``"unknown_agent"`` or ``"capped"``. Consumers show unknown codes as text.
+
+    ``dropped`` lists the agent names the model proposed that were removed (unknown,
+    duplicate, over the cap, empty query). For the log and evals only: the SSE
+    allowlist does not send it to the browser.
+    """
+
+    agents: list[str] = Field(min_length=1)
+    fallback: bool
+    reason: str | None = None
+    dropped: list[str] = Field(default_factory=list[str])
+
+
 class Token(_Payload):
     text: str  # one streamed chunk; may be "" (some providers emit empty chunks)
     agent: str = Field(min_length=1)
@@ -128,6 +151,7 @@ PAYLOAD_MODELS: Mapping[EventKind, type[_Payload]] = MappingProxyType(
         EventKind.RUN_STARTED: RunStarted,
         EventKind.NODE_STARTED: NodeStarted,
         EventKind.NODE_FINISHED: NodeFinished,
+        EventKind.ROUTE_DECIDED: RouteDecided,
         EventKind.TOKEN: Token,
         EventKind.TOOL_STARTED: ToolStarted,
         EventKind.TOOL_FINISHED: ToolFinished,

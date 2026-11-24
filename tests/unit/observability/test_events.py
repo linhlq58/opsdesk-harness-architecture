@@ -13,6 +13,7 @@ VALID_PAYLOADS: dict[EventKind, dict[str, Any]] = {
     EventKind.RUN_STARTED: {"workload": "chat", "entrypoint": "cli"},
     EventKind.NODE_STARTED: {"node": "router"},
     EventKind.NODE_FINISHED: {"node": "router", "duration_ms": 12},
+    EventKind.ROUTE_DECIDED: {"agents": ["ticket", "knowledge"], "fallback": False},
     EventKind.TOKEN: {"text": "Xin chào", "agent": "helpdesk"},
     EventKind.TOOL_STARTED: {"tool": "get_ticket", "args": {"ticket_id": "T-0001"}},
     EventKind.TOOL_FINISHED: {
@@ -137,3 +138,31 @@ def test_optional_payload_fields_have_defaults() -> None:
         payload={"tool": "get_ticket", "status": "ok", "duration_ms": 5},
     )
     assert e.kind is EventKind.TOOL_FINISHED
+
+
+# ------------------------------------------------------------- route_decided (M05)
+
+
+def test_route_decided_defaults_and_fallback_payload() -> None:
+    e = make_event(
+        kind=EventKind.ROUTE_DECIDED,
+        payload={
+            "agents": ["general"],
+            "fallback": True,
+            "reason": "unknown_agent",
+            "dropped": ["billing"],
+        },
+    )
+    assert e.payload["dropped"] == ["billing"]
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"agents": [], "fallback": False},  # a route set is never empty
+        {"agents": ["ticket"], "fallback": False, "queries": ["status of T-0002?"]},  # no text
+    ],
+)
+def test_route_decided_rejects_empty_routes_and_sub_queries(payload: dict[str, Any]) -> None:
+    with pytest.raises(ValidationError):
+        make_event(kind=EventKind.ROUTE_DECIDED, payload=payload)

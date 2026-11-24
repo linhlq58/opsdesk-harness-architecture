@@ -8,8 +8,8 @@ error and *no run starts*):
 
 1. Bearer token → ``Principal`` (``current_principal``): invalid / expired → ``401``.
 2. Body validated (``ChatIn``): empty or over 4,000 characters → ``422``.
-3. ``ThreadRegistry.require_owner`` (D5): unknown *or* foreign thread → the same
-   ``404``.
+3. ``ThreadRegistry.require_owner`` (D5): unknown, foreign *or* other-pattern
+   thread (M05) → the same ``404``. A pattern not configured in this process → ``501``.
 4. Build the per-request ``RequestContext`` (fresh ``request_id``).
 
 **The stream** (the path operation, a generator FastAPI turns into SSE):
@@ -39,6 +39,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 
+from opsdesk.agents.base import TurnGraph
 from opsdesk.api.deps import current_principal
 from opsdesk.api.schemas import ChatIn
 from opsdesk.api.sse import to_sse
@@ -64,6 +65,7 @@ ENTRYPOINT = "api"
 class PreparedTurn:
     ctx: RequestContext
     message: str
+    graph: TurnGraph  # M05: the pattern's graph (ticket agent or router)
 
 
 async def prepare_turn(
@@ -74,16 +76,19 @@ async def prepare_turn(
     """Steps 1-4: everything that may refuse the request, before any run starts."""
     thread_id = ThreadId(body.thread_id)
     try:
-        state.threads.require_owner(principal, thread_id)
+        state.threads.require_owner(principal, thread_id, body.pattern)
     except ThreadNotFound:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="thread not found") from None
+    graph = state.graphs.get(body.pattern)
+    if graph is None:
+        raise HTTPException(status.HTTP_501_NOT_IMPLEMENTED, detail="pattern not configured")
     ctx = RequestContext(
         principal=principal,
         request_id=new_request_id(),
         thread_id=thread_id,
         workload=Workload.CHAT,
     )
-    return PreparedTurn(ctx=ctx, message=body.message)
+    return PreparedTurn(ctx=ctx, message=body.message, graph=graph)
 
 
 @router.post("/chat", response_class=EventSourceResponse)
@@ -99,7 +104,7 @@ async def chat(
     async def run() -> None:
         try:
             await stream_turn(
-                state.agent,
+                turn.graph,
                 ctx=turn.ctx,
                 message=turn.message,
                 repos=state.repos,

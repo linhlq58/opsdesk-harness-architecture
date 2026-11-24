@@ -1,4 +1,9 @@
-"""The type every OpsDesk agent has, so callers (``run_turn``, demos) can name it.
+"""The types of what a turn runs, so callers (``run_turn``, demos) can name them.
+
+* ``HarnessAgent``: one ``create_agent`` agent (the M03 ticket agent, M05 specialists).
+* ``TurnGraph``: anything ``run_turn`` / ``stream_turn`` can run: a compiled LangGraph
+  graph whose runtime context is a ``ToolContext`` and whose state has ``messages``
+  (an agent, or the M05 router graph).
 
 ``create_agent(..., context_schema=ToolContext)`` returns a ``CompiledStateGraph``
 whose runtime context is a ``ToolContext``; pyright then checks that
@@ -18,3 +23,5 @@ from opsdesk.tools.context import ToolContext
 type HarnessAgent = CompiledStateGraph[
     AgentState[Any], ToolContext, InputAgentState, OutputAgentState[Any]
 ]
+
+type TurnGraph = CompiledStateGraph[Any, ToolContext, Any, Any]

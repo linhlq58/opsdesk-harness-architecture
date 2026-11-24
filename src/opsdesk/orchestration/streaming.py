@@ -16,8 +16,8 @@ One turn:
    ==========================================  ======================================
    raw v3 event                                OpsDesk
    ==========================================  ======================================
-   ``messages`` / ``content-block-delta`` /     ``token`` (``text``, ``agent``)
-   ``text-delta``
+   ``messages`` / ``content-block-delta`` /     ``token`` (``text``, ``agent``), unless
+   ``text-delta``                               the model call is tagged internal (M05)
    ``messages`` / ``tool-call-delta`` and the   ignored: the wrapper records the call
    other protocol events                        (D3)
    ``tools`` (``tool-started`` / ...)           ignored: unredacted duplicates of the
@@ -25,7 +25,19 @@ One turn:
    ``values`` (full graph state)                ignored in M04
    ==========================================  ======================================
 
-4. The answer is the last message of the final state.
+4. The answer is the last message of the final state (the router graph appends its
+   answer to ``messages`` too, so both kinds of graph work the same way).
+
+M05: ``stream_turn`` runs any ``TurnGraph``: the ticket agent or the router graph.
+
+* **Token filter (D5).** The router graph tags every model call whose text is not the
+  final answer with ``INTERNAL_TAG`` (the router call, and the specialists of a
+  multi-route turn). Their text-deltas are dropped here. Untagged text streams, so the
+  ticket agent behaves exactly as in M04. The rule ("tagged = internal") is generic:
+  this module does not know router state, route counts or node names.
+* **Token label.** ``agent`` = the ``create_agent`` name from the event metadata
+  (``lc_agent_name``: ``ticket``, ``hardware``, ...), else the LangGraph node
+  (``synthesize``), else the graph's name.
 5. ``run_finished`` in a ``finally``: ``completed``; ``failed`` (the exception is
    re-raised, like ``run_turn``); or ``cancelled`` when the task is cancelled (the
    client went away, D6), after which ``CancelledError`` is re-raised: swallowing it
@@ -46,19 +58,20 @@ from typing import Any
 from langchain_core._api import suppress_langchain_beta_warning
 from langchain_core.messages import BaseMessage, HumanMessage
 
-from opsdesk.agents.base import HarnessAgent
+from opsdesk.agents.base import TurnGraph
 from opsdesk.core.clock import Clock
 from opsdesk.domain.ports import Repositories
 from opsdesk.observability.bus import EventBus
 from opsdesk.observability.events import EventKind, RunStatus
 from opsdesk.observability.recorder import RunRecorder
+from opsdesk.orchestration.patterns.router import INTERNAL_TAG
 from opsdesk.orchestration.turn import TurnResult, thread_config
 from opsdesk.security.context import RequestContext
 from opsdesk.tools.context import ToolContext
 
 
 async def stream_turn(
-    agent: HarnessAgent,
+    agent: TurnGraph,
     *,
     ctx: RequestContext,
     message: str,
@@ -93,9 +106,12 @@ async def stream_turn(
         async with run_stream as run:
             async for raw in run:
                 # 3. Translate: only model text becomes an OpsDesk event.
-                text = _text_delta(raw)
-                if text is not None:
-                    await recorder.emit(EventKind.TOKEN, {"text": text, "agent": agent_name})
+                delta = _answer_delta(raw)
+                if delta is not None:
+                    text, label = delta
+                    await recorder.emit(
+                        EventKind.TOKEN, {"text": text, "agent": label or agent_name}
+                    )
             # 4. The answer: last message of the final state.
             final = await run.output()
 
@@ -114,15 +130,27 @@ async def stream_turn(
         )
 
 
-def _text_delta(raw: Mapping[str, Any]) -> str | None:
-    """The text of a v3 ``text-delta``; ``None`` for every other raw event (D3)."""
+def _answer_delta(raw: Mapping[str, Any]) -> tuple[str, str | None] | None:
+    """``(text, agent label)`` of a v3 ``text-delta`` that belongs to the answer;
+    ``None`` for every other raw event (M04 D3) and for internal model calls (M05 D5)."""
     if raw.get("method") != "messages":
         return None
-    protocol_event, _metadata = raw["params"]["data"]
+    data: Any = raw["params"]["data"][0]
+    metadata: Mapping[str, Any] = raw["params"]["data"][1]
+    if not isinstance(data, Mapping):
+        # A whole message a node wrote to the state (the router appends its answer to
+        # ``messages``): its text already streamed as deltas, or deliberately did not.
+        return None
+    protocol_event: Mapping[str, Any] = data  # pyright: ignore[reportUnknownVariableType]
     if protocol_event.get("event") != "content-block-delta":
         return None
+    if INTERNAL_TAG in (metadata.get("tags") or ()):
+        return None  # D5: router call, or a specialist of a multi-route turn
     delta: Mapping[str, Any] = protocol_event.get("delta") or {}
     if delta.get("type") != "text-delta":
         return None  # tool-call-delta: the wrapper records tool calls (D3)
     text: object = delta.get("text")
-    return text if isinstance(text, str) else None
+    if not isinstance(text, str):
+        return None
+    label: object = metadata.get("lc_agent_name") or metadata.get("langgraph_node")
+    return text, label if isinstance(label, str) else None

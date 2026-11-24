@@ -86,14 +86,16 @@ class Browser:
         return response.json()["token"]
 
     async def new_thread(self, token: str) -> str:
-        response = await self.client.post("/api/threads", headers=_bearer(token))
+        response = await self.client.post(
+            "/api/threads", json={"pattern": "ticket_agent"}, headers=_bearer(token)
+        )
         response.raise_for_status()
         return response.json()["thread_id"]
 
     async def chat(self, token: str, thread_id: str, message: str) -> httpx.Response:
         return await self.client.post(
             "/api/chat",
-            json={"thread_id": thread_id, "message": message},
+            json={"thread_id": thread_id, "pattern": "ticket_agent", "message": message},
             headers=_bearer(token),
         )
 
@@ -215,7 +217,11 @@ async def _scenarios(b: Browser, model: ScriptedChatModel | None, *, live: bool)
     result = await stream_post(
         b.app,
         "/api/chat",
-        {"thread_id": thread_c, "message": "Tell me everything about my tickets"},
+        {
+            "thread_id": thread_c,
+            "pattern": "ticket_agent",
+            "message": "Tell me everything about my tickets",
+        },
         token=an,
         stop=lambda frame: frame.event == "token",
     )

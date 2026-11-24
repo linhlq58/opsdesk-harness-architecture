@@ -27,7 +27,7 @@ from typing import Literal
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 
-from opsdesk.agents.base import HarnessAgent
+from opsdesk.agents.base import TurnGraph
 from opsdesk.core.clock import Clock
 from opsdesk.domain.ports import Repositories
 from opsdesk.observability.bus import EventBus
@@ -49,7 +49,7 @@ def thread_config(ctx: RequestContext) -> RunnableConfig:
 
 
 async def run_turn(
-    agent: HarnessAgent,
+    agent: TurnGraph,
     *,
     ctx: RequestContext,
     message: str,

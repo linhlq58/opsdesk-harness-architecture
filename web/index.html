@@ -11,7 +11,7 @@
     <div class="brand">
       <span class="logo" aria-hidden="true">◆</span>
       <span class="name">OpsDesk</span>
-      <span class="tag">IT Helpdesk · M04</span>
+      <span class="tag">IT Helpdesk · M05</span>
     </div>
     <label class="persona">
       <span>Persona</span>
@@ -23,13 +23,13 @@
     <!-- Left: chat -->
     <section class="panel chat" aria-label="Chat">
       <div class="panel-head">
-        <h2>Chat</h2>
+        <div id="tabs" class="tabs" role="tablist" aria-label="Pattern"></div>
         <div class="head-meta">
           <span id="thread-label" class="muted mono"></span>
           <button id="reset" type="button" class="ghost" title="Start a new thread">Reset</button>
         </div>
       </div>
-      <div id="messages" class="messages" aria-live="polite"></div>
+      <div id="messages-host" class="messages-host"></div>
       <div id="starters" class="starters"></div>
       <form id="composer" class="composer">
         <textarea id="input" rows="2" maxlength="4000" placeholder="Ask about your tickets…" required></textarea>
@@ -39,15 +39,30 @@
 
     <!-- Right: flow (M05) + event timeline -->
     <section class="panel side" aria-label="Run inspector">
-      <div class="flow-placeholder">
-        <strong>Flow</strong>
-        <span class="muted">The agent flow diagram arrives in M05 (router, subagents, handoffs).</span>
+      <!-- Router tab only: idle / working (node_started..node_finished) / used this turn -->
+      <div id="flow" class="flow" hidden>
+        <div class="flow-head">
+          <strong>Flow</strong>
+          <span id="routed" class="chip" hidden></span>
+          <span id="fallback" class="badge fallback" hidden>fallback</span>
+        </div>
+        <div class="flow-row">
+          <div class="node io" data-node="query">Query</div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="node" data-node="classify">Router</div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div id="flow-specialists" class="lane"></div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="node" data-node="synthesize">Synthesize</div>
+          <span class="arrow" aria-hidden="true">→</span>
+          <div class="node io" data-node="answer">Answer</div>
+        </div>
       </div>
       <div class="panel-head">
         <h2>Event timeline</h2>
         <span class="muted small">exactly what the server sent (allowlisted Event v1)</span>
       </div>
-      <ol id="timeline" class="timeline"></ol>
+      <div id="timeline-host" class="timeline-host"></div>
     </section>
   </main>
 

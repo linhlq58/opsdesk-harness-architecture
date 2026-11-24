@@ -1,4 +1,4 @@
-/* OpsDesk UI v1 (M04). Plain CSS, no build step. Light and dark via tokens. */
+/* OpsDesk UI v2 (M05). Plain CSS, no build step. Light and dark via tokens. */
 
 :root {
   --bg: #f5f6f8;
@@ -175,16 +175,61 @@ button.ghost {
 
 /* ------------------------------------------------------------ timeline */
 
-.flow-placeholder {
-  margin: 10px 14px 0;
-  padding: 12px;
-  border: 1px dashed var(--border);
+/* ---------------------------------------------------------------- tabs (M05) */
+
+.tabs { display: flex; gap: 4px; }
+.tab {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
   border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  padding: 4px 10px;
+  font-weight: 600;
+}
+.tab.active { color: var(--accent); border-color: var(--border); background: var(--bg); }
+.messages-host, .timeline-host { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+[hidden] { display: none !important; }
+
+/* ---------------------------------------------------------------- flow (M05) */
+
+.flow {
+  margin: 10px 14px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   font-size: 12px;
 }
+.flow-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.flow-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.lane { display: flex; flex-direction: column; gap: 4px; }
+.arrow { color: var(--muted); }
+.node {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  background: var(--bg);
+  white-space: nowrap;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.node.io { border-style: dashed; }
+.node.used { color: var(--accent); border-color: var(--accent); }
+.node.working {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+  animation: pulse 1s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: .6; } }
+.chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--badge-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+.badge.fallback { color: var(--warn); }
+.timeline .ns { color: var(--info); font-family: var(--mono); }
 
 .timeline {
   list-style: none;
